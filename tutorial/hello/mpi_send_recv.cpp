@@ -6,11 +6,6 @@
 void send_data();
 void recv_data();
 
-/*
- * 2つのプロセスの間で配列データを送る
- *
- * 実行方法: mpiexec -n 2 mpi_sample2
- */
 int main(int argc, char *argv[])
 {
     MPI_Init(&argc, &argv);

@@ -1,6 +1,6 @@
 #import "@preview/touying:0.6.1": *
-// #import themes.metropolis: *
-#import themes.university: *
+#import themes.metropolis: *
+// #import themes.university: *
 // #import themes.aqua: *
 // #import themes.dewdrop: *
 // #import themes.simple: *
@@ -9,7 +9,7 @@
 
 #import "@preview/numbly:0.1.0": numbly
 
-#show: university-theme.with(
+#show: metropolis-theme.with(
   aspect-ratio: "16-9",
   align: horizon,
   config-common(handout: true),
@@ -18,12 +18,6 @@
     subtitle: [Spring Training 2025],
     author: [Yoshihiro Izawa],
     date: [2025/05/13],
-  ),
-  config-colors(
-    primary: rgb("#8e690c"),
-    primary-light: rgb("#0d8590"),
-    primary-lightest: rgb("#e0ecf2"),
-    neutral-lightest: rgb("#ffffff")
   ),
 )
 #set text(font: "Noto Serif CJK JP", size: 18pt)
@@ -117,6 +111,9 @@
 - *Remote memory access*: `MPI_Put`, `MPI_Get`
 - *Process management*: `MPI_Comm_spawn`, `MPI_Comm_free`
 
+
+
+= Basic Learning of MPI
 
 == Minimum MPI Program
 
@@ -221,22 +218,144 @@ end program hello_mpi
 ```sh
 mpif90 mpi_hello.f90 -o mpi_hello
 mpirun -np 4 ./mpi_hello
-Num of Proc:            4
-My Rank:                2
-Num of Proc:            4
-My Rank:                0
-Num of Proc:            4
-My Rank:                3
-Num of Proc:            4
-My Rank:                1
+Num of Proc:  4
+My Rank:      2
+Num of Proc:  4
+My Rank:      0
+Num of Proc:  4
+My Rank:      3
+Num of Proc:  4
+My Rank:      1
 ```
 ]
 
-== Communicator
-- *MPI_COMM_WORLD*: Default communicator for all processes in MPI. Determines the processer group.
-- At 
 
-= Basic Learning of MPI
+== Important Terms of MPI
+
+#slide[
+=== Overview
+- *Process*: 
+  - computing unit in parallel computing in MPI. 
+  - process num is determined by `mpirun -np`
+- *Group*: 
+  - a set of processes that can communicate with each other. 
+- *Communicator*: 
+  - a group of processes that can communicate with each other.
+- *Rank*: 
+  - unique identifier for each process in MPI. 
+  - Ranks are assigned from 0 to `num_procs - 1`.
+]
+
+#slide[
+=== Communicator Image
+- Each process belongs to some *group*.
+- A group is associated with a *communicator*.
+- Each process in a communicator has a unique *rank*.
+  #align(center)[
+  ```
+  - Eaxmple:
+    - Process 0, 1, 2, 3 belong to a group.
+    - Communicator: MPI_COMM_WORLD
+    - Group: [P0, P1, P2, P3]
+    - Rank: 0, 1, 2, 3
+  ┌──────────────────────────────────────────┐
+  │       Communicator: MPI_COMM_WORLD       │
+  │       Group: [P0, P1, P2, P3]            │
+  │       Rank:  0    1    2    3            │
+  └──────────────────────────────────────────┘
+  ```
+  ]
+]
+
+#slide[
+=== MPI Functions for Communicator
+- *MPI_COMM_WORLD*:
+  - the default communicator that includes all processes.
+  - all processes first belong to this communicator.
+  - becomes the default communicator for most MPI functions.
+- *MPI_Comm_rank*:
+  - retrieves the rank of the calling process in specified communicator.
+  - usually use `MPI_COMM_WORLD` as the communicator.
+- *MPI_Comm_size*:
+  - retrieves the number of processes in the specified communicator.
+  - usually use `MPI_COMM_WORLD` as the communicator.
+- *MPI_Comm_split*:
+  - creates a new communicator by splitting the existing one based on a color and key.
+  - in other words, create a new communicator with the same color processes.
+]
+
+#slide[
+- *MPI_Comm_rank* and *MPI_Comm_size*
+```c
+int rank;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+printf("I am process %d\n", rank);
+```
+- *MPI_Comm_size*
+```c
+int size;
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+printf("There are %d processes\n", size);
+```
+]
+
+#slide(composer: (4fr, 3fr))[
+- *MPI_Comm_split*
+```c
+// ランクの3の剰余を基に color=0, 1, 2 に分ける
+int color = rank % 3;
+
+MPI_Comm new_comm;
+MPI_Comm_split(MPI_COMM_WORLD, color, rank, &new_comm);
+
+int new_rank, new_size;
+MPI_Comm_rank(new_comm, &new_rank);
+MPI_Comm_size(new_comm, &new_size);
+
+printf("World Rank %d => Group %d, New Rank %d of %d\n",
+        rank, color, new_rank, new_size);
+
+MPI_Comm_free(&new_comm);  // 新しいコミュニケータの解放
+```
+][
+```sh
+$ mpicc comm_split.c -o comm_split
+$ mpirun -np 8 ./comm_split
+World Rank 5 => Group 2, New Rank 1 of 2
+World Rank 2 => Group 2, New Rank 0 of 2
+World Rank 1 => Group 1, New Rank 0 of 3
+World Rank 4 => Group 1, New Rank 1 of 3
+World Rank 7 => Group 1, New Rank 2 of 3
+World Rank 3 => Group 0, New Rank 1 of 3
+World Rank 6 => Group 0, New Rank 2 of 3
+World Rank 0 => Group 0, New Rank 0 of 3
+```
+]
+
+
+
+#slide[
+  #set text(size: 18pt)
+  #align(center)[
+    #table(
+      columns: (auto, auto, auto, auto, auto),
+      inset: 7pt,
+      align: center + horizon,
+      stroke: 0.5pt,
+      [World Rank], [color(= rank % 3)], [new group], [new rank], [new_size],
+      [0], [0],        [{0, 3, 6}],     [0],               [3],
+      [1], [1],        [{1, 4, 7}],     [0],               [3],
+      [2], [2],        [{2, 5}],        [0],               [2],
+      [3], [0],        [{0, 3, 6}],     [1],               [3],
+      [4], [1],        [{1, 4, 7}],     [1],               [3],
+      [5], [2],        [{2, 5}],        [1],               [2],
+      [6], [0],        [{0, 3, 6}],     [2],               [3],
+      [7], [1],        [{1, 4, 7}],     [2],               [3],
+    )
+  ]
+  #set text(size: 18pt)
+]
+
 
 = References
 

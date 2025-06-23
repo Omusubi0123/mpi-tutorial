@@ -201,29 +201,6 @@ My Rank     : 2
 ```
 ]
 
-#slide[
-=== MPI Language Differences
-#set text(size: 16pt)
-#table(
-  columns: (auto, auto, auto, auto),
-  inset: 7pt,
-  align: center + horizon,
-  stroke: 0.5pt,
-  [], [*C*], [*C++ (※)*], [*Fortran*],
-  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
-  [*Official MPI support*], [○], [▲], [○],
-  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
-  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
-  [*Scientific computing*], [○], [▲], [◎]
-)
-- C++
-  - MPI-3.0 abolished C++ only bindings.
-  - Currently, C++ also uses C interface.
-- Fortran
-  - Considering readability, type safety, and portability, `use mpi` is recommended.
-]
-
-
 #slide(composer: (3fr, 2fr))[
 === Hello World (Fortran)
 ```fortran
@@ -258,6 +235,27 @@ My Rank:      1
 ```
 ]
 
+#slide[
+=== MPI Language Differences
+#set text(size: 16pt)
+#table(
+  columns: (auto, auto, auto, auto),
+  inset: 7pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [], [*C*], [*C++ (※)*], [*Fortran*],
+  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
+  [*Official MPI support*], [○], [▲], [○],
+  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
+  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
+  [*Scientific computing*], [○], [▲], [◎]
+)
+- C++
+  - MPI-3.0 abolished C++ only bindings.
+  - Currently, C++ also uses C interface.
+- Fortran
+  - Considering readability, type safety, and portability, `use mpi` is recommended.
+]
 
 == Important Terms of MPI
 

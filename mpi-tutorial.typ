@@ -49,7 +49,7 @@
 #show label("red"): set text(red)
 
 #title-slide()
-#outline(depth: 1)
+#outline(depth: 2)
 
 = MPI Overview
 
@@ -68,12 +68,18 @@
 
 == MPI Features
 
-- *Communication Model*: Uses message passing for communication between processes.
-- *Distributed Memory Support*: Each process has its own memory space, no shared memory.
-- *Multi-node Capacity*: Can run across multiple nodes; abstracts network communication.
-- *Standardized API*: Standardized interface in C, C++, and Fortran; hightly portable.
-- *Multiple Implementation*: Available implementations include OpenMPI, MPICH, and Intel MPI, etc.
-- *Difficalt to Debug*: Debugging is challenging due to concurrency and communiaction complexity.
+- *Communication Model*: 
+  - Uses message passing for communication between processes.
+- *Distributed Memory Support*: 
+  - Each process has its own memory space, no shared memory.
+- *Multi-node Capacity*: 
+  - Can run across multiple nodes; abstracts network communication.
+- *Standardized API*: 
+  - Standardized interface in C, C++, and Fortran; hightly portable.
+- *Multiple Implementation*: 
+  - Available implementations include OpenMPI, MPICH, and Intel MPI, etc.
+- *Difficalt to Debug*: 
+  - Debugging is challenging due to concurrency and communiaction complexity.
 
 == Typical example of Usage
 - Simulation on a supercomputer(Physics, Meteorology, Chemistry, etc.)
@@ -194,6 +200,29 @@ Num of Proc : 4
 My Rank     : 2
 ```
 ]
+
+#slide[
+=== MPI Language Differences
+#set text(size: 16pt)
+#table(
+  columns: (auto, auto, auto, auto),
+  inset: 7pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [], [*C*], [*C++ (※)*], [*Fortran*],
+  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
+  [*Official MPI support*], [○], [▲], [○],
+  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
+  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
+  [*Scientific computing*], [○], [▲], [◎]
+)
+- C++
+  - MPI-3.0 abolished C++ only bindings.
+  - Currently, C++ also uses C interface.
+- Fortran
+  - Considering readability, type safety, and portability, `use mpi` is recommended.
+]
+
 
 #slide(composer: (3fr, 2fr))[
 === Hello World (Fortran)
@@ -321,6 +350,7 @@ MPI_Comm_free(&new_comm);  // 新しいコミュニケータの解放
 ```sh
 $ mpicc comm_split.c -o comm_split
 $ mpirun -np 8 ./comm_split
+
 World Rank 5 => Group 2, New Rank 1 of 2
 World Rank 2 => Group 2, New Rank 0 of 2
 World Rank 1 => Group 1, New Rank 0 of 3
@@ -356,6 +386,156 @@ World Rank 0 => Group 0, New Rank 0 of 3
   #set text(size: 18pt)
 ]
 
+== Point-to-Point Communication
+#slide(composer: (1fr, 1fr))[
+`send_data()`
+```c
+int send_data[10];
+for (int i = 0; i < 10; i++)
+    send_data[i] = i + 1;
+int data_count = 10;
+
+printf("Rank 0: Sending data.\n");
+printf("send_data: [");
+for (int i = 0; i < 10; i++)
+    printf(" %d", send_data[i]);
+printf(" ]\n");
+
+MPI_Send((void*)send_data, data_count, MPI_INT, 1, 0, MPI_COMM_WORLD);
+```
+][
+`recv_data()`
+```c
+int data[10];
+int data_count = 10;
+MPI_Status st;
+
+printf("Rank 1: Receiving data.\n");
+MPI_Recv((void*)data, data_count, MPI_INT, 0, 0, MPI_COMM_WORLD, &st);
+printf("recv_data: [");
+for (int i = 0; i < 10; i++)
+    printf(" %d", data[i]);
+printf(" ]\n");
+```
+]
+#block(fill: rgb("#f5f5f5"), inset: (left: 1em, right: 1em, top: 0.5em, bottom: 0.5em), width: 100%, radius: 4pt)[
+
+```sh
+$ mpicc send_recv.c -o mpi_send_recv
+$ mpirun -np 2 ./mpi_send_recv
+
+Rank 0: Sending data.
+send_data: [ 1 2 3 4 5 6 7 8 9 10 ]
+Rank 1: Receiving data.
+recv_data: [ 1 2 3 4 5 6 7 8 9 10 ]
+```
+]
+
+#slide[
+- We can combine `send_data()` and `recv_data()` into a single program.
+- The program can be run with `mpirun -np 2 ./mpi_send_recv2`
+```c
+int data_count = 10;
+int numbers[data_count];
+if (world_rank == 0) {
+    for (int i = 0; i < 10; i++) numbers[i] = i + 1;
+    printf("Send Data:");
+    for (int i = 0; i < 10; i++) 
+        printf(" %d", numbers[i]);
+    printf("\n");
+    MPI_Send((void *)&numbers, data_count, MPI_INT, 1, 0, MPI_COMM_WORLD);
+} else if (world_rank == 1) {
+    MPI_Recv(&numbers, data_count, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    printf("Received Data:");
+    for (int i = 0; i < 10; i++) 
+        printf(" %d", numbers[i]);
+    printf("\n");
+}
+```
+
+```sh
+$ mpicc send_recv2.c -o mpi_send_recv2
+$ mpirun -np 2 ./mpi_send_recv2
+
+Send Data: 1 2 3 4 5 6 7 8 9 10
+Received Data: 1 2 3 4 5 6 7 8 9 10
+```
+]
+
+#slide(composer: (1fr, 1fr))[
+- many MPI functions have the following signature:
+```c
+MPI_Send(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int destination,
+    int tag,
+    MPI_Comm communicator
+);
+```
+][
+```c
+MPI_Recv(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int source,
+    int tag,
+    MPI_Comm communicator,
+    MPI_Status* status
+);
+```
+]
+
+#slide[
+- Many MPI functions have the following signature
+```c
+MPI_Send(
+    void* data,             // data buffer address
+    int count,              // number of elements in the buffer
+    MPI_Datatype datatype,  // data type of the elements
+    int destination,        // destination process rank
+    int tag,                // message tag (for filtering)
+    MPI_Comm communicator   // communicator
+);
+```
+```c
+MPI_Recv(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int source,
+    int tag,
+    MPI_Comm communicator,
+    MPI_Status* status
+);
+```
+]
+
+#slide[
+  #align(center)[
+    #table(
+      columns: (auto, auto),
+      inset: 7pt,
+      stroke: 1pt,
+      [*MPI Data Type*], [*C Type*],
+      [`MPI_SHORT`], [`short int`],
+      [`MPI_INT`], [`int`],
+      [`MPI_LONG`], [`long int`],
+      [`MPI_LONG_LONG`], [`long long int`],
+      [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
+      [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
+      [`MPI_UNSIGNED`], [`unsigned int`],
+      [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
+      [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
+      [`MPI_FLOAT`], [`float`],
+      [`MPI_DOUBLE`], [`double`],
+      [`MPI_LONG_DOUBLE`], [`long double`],
+      [`MPI_BYTE`], [`char`]
+    )
+  ]
+]
 
 = References
 
@@ -363,9 +543,3 @@ World Rank 0 => Group 0, New Rank 0 of 3
 - #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]
 - #blink("https://www.hpci-office.jp/documents/HPC_Programming_Seminar/MPI_20240529.pdf")[並列プログラミング入門]
 
-
-// #slide(composer: (2fr, 1fr))[
-
-// ][
-
-// ]

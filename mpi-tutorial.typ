@@ -699,6 +699,100 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
   [32], [4000k],    [7.447], [0.937],
 )
 ]
+
+== MPI_Scatter, MPI_Gather, MPI_Allgather
+
+#slide[
+=== MPI_Scatter
+- `MPI_Scatter` is a collective communication function that distributes data from a root process to all other processes in a communicator.
+- `MPI_Bcast` sends the same data to all processes, while `MPI_Scatter` sends different chunks of data to each process.
+```c
+MPI_Scatter(
+    void* send_data,            // data buffer address to send
+    int send_count,             // number of elements to send to each process
+    MPI_Datatype send_datatype, // data type of the elements to send
+    void* recv_data,            // data buffer address to receive
+    int recv_count,             // number of elements to receive
+    MPI_Datatype recv_datatype, // data type of the elements to receive
+    int root,                   // rank of the root process
+    MPI_Comm communicator.      // communicator
+);
+```
+- `send_count`: the number of elements to send to each process.
+- `recv_count`: the number of elements to receive from each process.
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+#define TOTAL_DATA 20
+...
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+int send_data[TOTAL_DATA];
+int recv_count = TOTAL_DATA / size;
+int recv_data[recv_count];
+
+if (rank == 0) {
+    for (int i = 0; i < TOTAL_DATA; i++)
+        send_data[i] = i;
+    printf("Rank 0: Scattering data...\n");
+}
+
+MPI_Scatter(send_data, recv_count, MPI_INT,
+            recv_data, recv_count, MPI_INT,
+            0, MPI_COMM_WORLD);
+
+printf("Rank %d received:", rank);
+for (int i = 0; i < recv_count; i++)
+    printf(" %d", recv_data[i]);
+printf("\n");
+```
+][
+```sh
+// send_data == 5
+
+$ mpicc scatter.c -o scatter
+$ mpirun -np 4 ./scatter
+
+Rank 0: Scattering data...
+Rank 0 received: 0 1 2 3 4
+Rank 1 received: 5 6 7 8 9
+Rank 2 received: 10 11 12 13 14
+Rank 3 received: 14 15 16 17 18
+```
+
+if `send_data` cannot divide by `size`, the last process will receive the remaining data.
+```sh
+// send_data == 6
+
+Rank 0 received: 0 1 2 3 4 5
+Rank 1 received: 6 7 8 9 10 11
+Rank 2 received: 12 13 14 15 16 17
+Rank 3 received: 18 19 20 -875497504 65535 20
+```
+]
+
+
+#slide[
+=== MPI_Gather
+- `MPI_Gather` is a collective communication function that collects data from all processes in a communicator and sends it to a root process.
+- It is the reverse operation of `MPI_Scatter`.
+- This is used in parallel sorting, parallel searching, and other parallel algorithms.
+```c
+MPI_Gather(
+    void* send_data,
+    int send_count,
+    MPI_Datatype send_datatype,
+    void* recv_data,
+    int recv_count,
+    MPI_Datatype recv_datatype,
+    int root,
+    MPI_Comm communicator
+);
+```
+]
+
 = References
 
 == MPI Reference

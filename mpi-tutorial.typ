@@ -36,7 +36,7 @@
   box(
     fill: rgb("#f5f5f5"), // ごく薄いグレーの背景色
     inset: (left: 1em, right: 1em, top: 0.5em, bottom: 0.5em), // 内側の余白を調整
-    width: 100%, // 幅を親要素に合わせる
+    // width: 100%, // 幅を親要素に合わせる
     radius: 4pt, // 角を少し丸める（任意）
     it
   )
@@ -512,32 +512,196 @@ MPI_Recv(
 ]
 
 #slide[
-  #align(center)[
-    #table(
-      columns: (auto, auto),
-      inset: 7pt,
-      stroke: 1pt,
-      [*MPI Data Type*], [*C Type*],
-      [`MPI_SHORT`], [`short int`],
-      [`MPI_INT`], [`int`],
-      [`MPI_LONG`], [`long int`],
-      [`MPI_LONG_LONG`], [`long long int`],
-      [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
-      [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
-      [`MPI_UNSIGNED`], [`unsigned int`],
-      [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
-      [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
-      [`MPI_FLOAT`], [`float`],
-      [`MPI_DOUBLE`], [`double`],
-      [`MPI_LONG_DOUBLE`], [`long double`],
-      [`MPI_BYTE`], [`char`]
-    )
-  ]
+  #table(
+    columns: (auto, auto),
+    inset: 7pt,
+    stroke: 1pt,
+    align: center,
+    [*MPI Data Type*], [*C Type*],
+    [`MPI_SHORT`], [`short int`],
+    [`MPI_INT`], [`int`],
+    [`MPI_LONG`], [`long int`],
+    [`MPI_LONG_LONG`], [`long long int`],
+    [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
+    [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
+    [`MPI_UNSIGNED`], [`unsigned int`],
+    [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
+    [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
+    [`MPI_FLOAT`], [`float`],
+    [`MPI_DOUBLE`], [`double`],
+    [`MPI_LONG_DOUBLE`], [`long double`],
+    [`MPI_BYTE`], [`char`]
+  )
 ]
 
+= Collective Coommunication
+
+== syncronization
+
+- Collective communication is a communication method that involves all processes in a communicator.
+- In collective communiaction, syncronization among all process is required.
+- All process cannot proceed until all processes reach the same point.
+- To achieve this, MPI provides several collective communication functions.
+
+== MPI_Barrier
+
+#slide[
+- `MPI_Barrier` is a collective communication function that synchronizes all processes in a communicator.
+- All processes must call `MPI_Barrier` to ensure that all processes reach the same point before proceeding.
+- It is often used to ensure that all processes have completed their previous tasks before moving on to the next step.
+- The most basic usage of `MPI_Barrier` is to precise time measurement.
+- `MPI_Barrier(MPI_Comm communicator);`
+]
+
+#slide[
+- If you do not call `MPI_Barrier` in all processed, the program will block and cannot proceed.
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+  int rank, size;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  printf("Rank %d: before barrier\n", rank);
+  
+  sleep(rank);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  printf("Rank %d: after barrier\n", rank);
+```
+][
+```sh
+$ mpicc barrier.c -o barrier
+$ mpirun -np 4 ./barrier
+
+Rank 2: before barrier
+Rank 3: before barrier
+Rank 0: before barrier
+Rank 1: before barrier
+Rank 3: after barrier
+Rank 1: after barrier
+Rank 0: after barrier
+Rank 2: after barrier
+```
+]
+
+== MPI_Bcast
+
+#slide[
+- `MPI_Bcast` is a collective communication function that broadcasts data from one process to all other processes in a communicator.
+- It is used to distribute data from a root process to all other processes.
+- All processes in the communicator must call `MPI_Bcast` with the same parameters.
+```c
+MPI_Bcast(
+    void* data,            // data buffer address
+    int count,             // number of elements in the buffer
+    MPI_Datatype datatype, // data type of the elements
+    int root,              // rank of the root process
+    MPI_Comm communicator  // communicator
+);
+```
+- Root Process: Sends the data to all other processes.
+- Other Processes: Receive the data from the root process.
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+int rank, size;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+int data[10];
+if (rank == 0) {
+    for (int i = 0; i < 10; i++) {
+        data[i] = i + 1;
+    }
+    printf("Rank 0: broadcasting data = [");
+    for (int i = 0; i < 10; i++) 
+        printf(" %d", data[i]);
+    printf(" ]\n");
+}
+
+MPI_Bcast(data, 10, MPI_INT, 0, MPI_COMM_WORLD);
+
+printf("Rank %d: received data = [", rank);
+for (int i = 0; i < 10; i++) 
+    printf(" %d", data[i]);
+printf(" ]\n");
+```
+][
+```sh
+$ mpicc bcast.c -o bcast
+$ mpirun -np 4 ./bcast
+
+Rank 0: broadcasting data = [ 1 2 3 4 5 6 7 8 9 10 ]
+Rank 0: received data = [ 1 2 3 4 5 6 7 8 9 10 ]
+Rank 2: received data = [ 1 2 3 4 5 6 7 8 9 10 ]
+Rank 3: received data = [ 1 2 3 4 5 6 7 8 9 10 ]
+Rank 1: received data = [ 1 2 3 4 5 6 7 8 9 10 ]
+```
+]
+
+#slide[
+- We can implement `MPI_Bcast` wrapper using `MPI_Send` and `MPI_Recv`.
+```c
+void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm communicator) {
+  int world_rank;
+  MPI_Comm_rank(communicator, &world_rank);
+  int world_size;
+  MPI_Comm_size(communicator, &world_size);
+
+  if (world_rank == root) {
+    for (int i = 0; i < world_size; i++) {
+      if (i != world_rank) {
+        MPI_Send(data, count, datatype, i, 0, communicator);
+      }
+    }
+  } else {
+    MPI_Recv(data, count, datatype, root, 0, communicator, MPI_STATUS_IGNORE);
+  }
+}
+```
+- Q: Is this equivalent to `MPI_Bcast`?
+]
+
+#slide[
+- A: No, it is less efficient than `MPI_Bcast`.
+- This implementation has only one network communication link. The process with `root` rank sends data to all other processes one by one.
+- `MPI_Bcast` uses Tree-based broadcast algorithm.
+1. The root process sends data to process 1.
+2. The root process sends data to process 2, process 1 sends data to process 3.
+3. The root process sends data to process 4, process 1 sends data to process 5, process 2 sends data to process 6, process 3 sends data to process 7.
+...
+]
+
+#slide[
+- Comparison of `MPI_Bcast` and `my_bcast`
+- Average time of 10 trials
+#table(
+  columns: (auto, auto, auto, auto),
+  inset: 6pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [Procs], [Data Size], [my_bcast (ms)], [MPI_Bcast (ms)],
+
+  [16], [40],       [0.008], [0.009],
+  [16], [400],      [0.022], [0.009],
+  [16], [4k],       [0.026], [0.010],
+  [16], [40k],      [0.096], [0.018],
+  [16], [400k],     [0.355], [0.084],
+  [16], [4000k],    [4.832], [0.893],
+  [32], [40],       [0.012], [0.012],
+  [32], [400],      [0.041], [0.011],
+  [32], [4k],       [0.052], [0.013],
+  [32], [40k],      [0.193], [0.022],
+  [32], [400k],     [0.735], [0.097],
+  [32], [4000k],    [7.447], [0.937],
+)
+]
 = References
 
 == MPI Reference
 - #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]
 - #blink("https://www.hpci-office.jp/documents/HPC_Programming_Seminar/MPI_20240529.pdf")[並列プログラミング入門]
-
+- #blink("https://mpitutorial.com/tutorials")[MPI Tutorial]

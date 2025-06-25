@@ -778,14 +778,14 @@ Rank 3 received: 18 19 20 -875497504 65535 20
 - This is used in parallel sorting, parallel searching, and other parallel algorithms.
 ```c
 MPI_Gather(
-    void* send_data,
-    int send_count,
-    MPI_Datatype send_datatype,
-    void* recv_data,
-    int recv_count,
-    MPI_Datatype recv_datatype,
-    int root,
-    MPI_Comm communicator
+    void* send_data,            // data buffer address to send
+    int send_count,             // number of elements to send from each process
+    MPI_Datatype send_datatype, // data type of the elements to send
+    void* recv_data,            // data buffer address to receive
+    int recv_count,             // number of elements to receive from each process
+    MPI_Datatype recv_datatype, // data type of the elements to receive
+    int root,                   // rank of the root process
+    MPI_Comm communicator       // communicator
 );
 ```
 - Except for the root process, pass `NULL` for `recv_data` is allowed.
@@ -823,6 +823,57 @@ $ mpicc gather.c -o gather
 $ mpirun -np 4 ./gather
 ```
 ]
+
+#slide[
+=== MPI_Allgather
+- `MPI_Scatter` and `MPI_Gather` conduct many-to-one or one-to-many communication.
+- It is useful if you send data from multiple processed to multiple processes.
+- *MPI_Allgather* is a collective communication function that collects data from all processes in a communicator and sends it to all other processes.
+- It is like first `MPI_Gather` and then `MPI_Bcast`. Collect data by process rank order.
+```c
+MPI_Allgather(
+    void* send_data,            // data buffer address to send
+    int send_count,             // number of elements to send from each process
+    MPI_Datatype send_datatype, // data type of the elements to send
+    void* recv_data,            // data buffer address to receive
+    int recv_count,             // number of elements to receive from each process
+    MPI_Datatype recv_datatype, // data type of the elements to receive
+    MPI_Comm communicator       // communicator
+);
+```
+- `MPI_Allgather` does not have a root process parameter.
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+#define ITEMS_PER_PROC 2
+...
+int rank, size;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+int send_data[ITEMS_PER_PROC];
+send_data[0] = rank * 10;
+send_data[1] = rank * 10 + 1;
+
+int recv_data[ITEMS_PER_PROC * size];
+
+MPI_Allgather(send_data, ITEMS_PER_PROC, MPI_INT,
+              recv_data, ITEMS_PER_PROC, MPI_INT,
+              MPI_COMM_WORLD);
+
+printf("Rank %d received:", rank);
+for (int i = 0; i < ITEMS_PER_PROC * size; i++)
+    printf(" %d", recv_data[i]);
+printf("\n");
+```
+][
+```sh
+$ mpicc allgather.c -o allgather
+$ mpirun -np 4 ./allgather
+```
+]
+
 
 = References
 

@@ -546,15 +546,12 @@ MPI_Recv(
 == MPI_Barrier
 
 #slide[
-- `MPI_Barrier` is a collective communication function that synchronizes all processes in a communicator.
+- *MPI_Barrier* is a collective communication function that synchronizes all processes in a communicator.
 - All processes must call `MPI_Barrier` to ensure that all processes reach the same point before proceeding.
 - It is often used to ensure that all processes have completed their previous tasks before moving on to the next step.
 - The most basic usage of `MPI_Barrier` is to precise time measurement.
-- `MPI_Barrier(MPI_Comm communicator);`
-]
-
-#slide[
 - If you do not call `MPI_Barrier` in all processed, the program will block and cannot proceed.
+- `MPI_Barrier(MPI_Comm communicator);`
 ]
 
 #slide(composer: (1fr, 1fr))[
@@ -589,7 +586,7 @@ Rank 2: after barrier
 == MPI_Bcast
 
 #slide[
-- `MPI_Bcast` is a collective communication function that broadcasts data from one process to all other processes in a communicator.
+- *MPI_Bcast* is a collective communication function that broadcasts data from one process to all other processes in a communicator.
 - It is used to distribute data from a root process to all other processes.
 - All processes in the communicator must call `MPI_Bcast` with the same parameters.
 ```c
@@ -666,7 +663,7 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
 ]
 
 #slide[
-- A: No, it is less efficient than `MPI_Bcast`.
+- A: *No*, it is less efficient than `MPI_Bcast`.
 - This implementation has only one network communication link. The process with `root` rank sends data to all other processes one by one.
 - `MPI_Bcast` uses Tree-based broadcast algorithm.
 1. The root process sends data to process 1.
@@ -704,7 +701,7 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
 
 #slide[
 === MPI_Scatter
-- `MPI_Scatter` is a collective communication function that distributes data from a root process to all other processes in a communicator.
+- *MPI_Scatter* is a collective communication function that distributes data from a root process to all other processes in a communicator.
 - `MPI_Bcast` sends the same data to all processes, while `MPI_Scatter` sends different chunks of data to each process.
 ```c
 MPI_Scatter(
@@ -776,7 +773,7 @@ Rank 3 received: 18 19 20 -875497504 65535 20
 
 #slide[
 === MPI_Gather
-- `MPI_Gather` is a collective communication function that collects data from all processes in a communicator and sends it to a root process.
+- *MPI_Gather* is a collective communication function that collects data from all processes in a communicator and sends it to a root process.
 - It is the reverse operation of `MPI_Scatter`.
 - This is used in parallel sorting, parallel searching, and other parallel algorithms.
 ```c
@@ -791,9 +788,45 @@ MPI_Gather(
     MPI_Comm communicator
 );
 ```
+- Except for the root process, pass `NULL` for `recv_data` is allowed.
+- `recv_count` is the number of elements to receive from each process, not the total number of elements.
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+#define ITEMS_PER_PROC 2
+...
+int rank, size;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+int send_data[ITEMS_PER_PROC];
+send_data[0] = rank * 2;
+send_data[1] = rank * 2 + 1;
+
+int recv_data[ITEMS_PER_PROC * size];
+
+MPI_Gather(send_data, ITEMS_PER_PROC, MPI_INT,
+            recv_data, ITEMS_PER_PROC, MPI_INT,
+            0, MPI_COMM_WORLD);
+
+if (rank == 0) {
+    printf("Rank 0 gathered data: ");
+    for (int i = 0; i < ITEMS_PER_PROC * size; i++)
+        printf("%d ", recv_data[i]);
+    printf("\n");
+}
+```
+][
+```sh
+$ mpicc gather.c -o gather
+$ mpirun -np 4 ./gather
+```
 ]
 
 = References
+
+
 
 == MPI Reference
 - #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]

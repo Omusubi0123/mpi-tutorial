@@ -416,8 +416,8 @@ for (int i = 0; i < 10; i++)
 printf(" ]\n");
 ```
 ]
-#block(fill: rgb("#f5f5f5"), inset: (left: 1em, right: 1em, top: 0.5em, bottom: 0.5em), width: 100%, radius: 4pt)[
 
+#slide[
 ```sh
 $ mpicc send_recv.c -o mpi_send_recv
 $ mpirun -np 2 ./mpi_send_recv
@@ -874,6 +874,67 @@ $ mpirun -np 4 ./allgather
 ```
 ]
 
+
+== MPI_Reduce, MPI_Allreduce
+#slide[
+=== MPI_Reduce
+- `reduce` is a basic concept in functional programming. It transforms a set of numbers into a smaller set of numbers.
+  - `reduce([1, 2, 3, 4, 5], sum) = 15`
+  - `reduce([1, 2, 3, 4, 5], multiply) = 120`
+- Collect distribulted data and apply a reduction operation is a tough task. However, MPI provides a simple interface to do this.
+- *MPI_Reduce* is a collective communication function that collects data from all processes in a communicator to the root process, and applies a reduction operation to the data.
+]
+
+// #slide(composer: (1fr, 1fr))[
+#slide[
+```c
+MPI_Reduce(
+    void* send_data,       // data buffer address to send
+    void* recv_data,       // data buffer address to receive
+    int count,             // number of elements to send from each process
+    MPI_Datatype datatype, // data type of the elements to send
+    MPI_Op op,             // reduction operation to apply
+    int root,              // rank of the root process
+    MPI_Comm communicator  // communicator
+);
+```
+// ][
+#set text(size: 14pt)
+- MPI Reduction Operations:
+  - *MPI_MAX* - maximum value
+  - *MPI_MIN* - minimum value
+  - *MPI_SUM* - sum of values
+  - *MPI_PROD* - product of values
+  - *MPI_LAND* - logical AND of values
+  - *MPI_LOR* - logical OR of values
+  - *MPI_BAND* - bitwise AND of values
+  - *MPI_BOR* - bitwise OR of values
+  - *MPI_MAXLOC* - maximum value and its rank
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+int rank, size;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+int value = rank + 1;
+int sum;
+
+MPI_Reduce(&value, &sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+if (rank == 0) {
+    double average = (double)sum / size;
+    printf("Total sum = %d\n", sum);
+    printf("Average = %.2f\n", average);
+}
+```
+][
+```sh
+$ mpicc reduce.c -o reduce
+$ mpirun -np 4 ./reduce
+```
+]
 
 = References
 

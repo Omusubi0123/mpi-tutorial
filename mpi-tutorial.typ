@@ -121,10 +121,10 @@
 
 = Basic Learning of MPI
 
-== MPI Simulation
+== MPI Simulation Website
 #slide[
-- I developed a simple MPI simulation site for learning MPI.
-- Please Click on: #blink("https://v0-mpi-operation-images.vercel.app/")[Izawa MPI Simulation]
+- I developed a simple MPI simulation website for learning MPI.
+- Please Click on: #blink("https://mpi-simulator.vercel.app/")[Izawa MPI Simulation Website]
 #align(center)[
   #image("images/simulator.png", width: 60%)
 ]

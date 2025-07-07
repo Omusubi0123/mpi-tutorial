@@ -1,3 +1,5 @@
+# tutorial/pagerank/で実行すること
+
 import random
 
 def generate_large_graph(n_nodes: int, avg_degree: int, filename: str):

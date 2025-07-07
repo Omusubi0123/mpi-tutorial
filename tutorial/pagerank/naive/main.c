@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
             for (int i = 0; i < n; i++) {
                 diff += fabs(new_x_full[i] - x[i]);
             }
-            printf("[Iter %d] diff = %f\n", iter + 1, diff);
+            printf("[Iter %d] diff = %.4f   ", iter + 1, diff);
         }
 
         // 全rankにdiffをブロードキャスト（終了判定共有）
@@ -80,10 +80,16 @@ int main(int argc, char **argv) {
     
     // 結果表示
     if (rank == 0) {
-        printf("\nFinal PageRank:\n");
+        printf("\n\nFinal PageRank:\n");
+        printf("    ");
         for (int i = 0; i < n; i++) {
-            printf("Node %d: %.6f\n", i, x[i]);
+            printf("%6d ", i);
         }
+        printf("\nPR: ");
+        for (int i = 0; i < n; i++) {
+            printf("%6.4f ", x[i]);
+        }
+        printf("\n");
     }
 
     free(x);

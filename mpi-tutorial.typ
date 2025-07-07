@@ -697,6 +697,8 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
 )
 ]
 
+#image("images/bcast_time_comparison.png", width: 80%)
+
 == MPI_Scatter, MPI_Gather, MPI_Allgather
 
 #slide[

@@ -1,35 +1,50 @@
-#include <stdio.h>
 #include "graph_loader.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-int edge_from[MAX_EDGES], edge_to[MAX_EDGES];
-int out_degree[MAX_NODES];
-double M[MAX_NODES][MAX_NODES];
-
-int read_graph(const char *filename, int *n_nodes) {
+int read_graph(const char *filename, Graph *g) {
     FILE *fp = fopen(filename, "r");
     if (!fp) {
         perror("fopen");
         return -1;
     }
 
-    int max_node = 0, from, to, edge_count = 0;
+    if (fscanf(fp, "%d", &g->n_nodes) != 1) {
+        fprintf(stderr, "Failed to read node count\n");
+        return -1;
+    }
+
+    g->out_degree = calloc(g->n_nodes, sizeof(int));
+    g->M = malloc(g->n_nodes * sizeof(double *));
+    for (int i = 0; i < g->n_nodes; i++) {
+        g->M[i] = calloc(g->n_nodes, sizeof(double));
+    }
+
+    int from, to;
+    g->n_edges = 0;
     while (fscanf(fp, "%d %d", &from, &to) == 2) {
-        edge_from[edge_count] = from;
-        edge_to[edge_count] = to;
-        out_degree[from]++;
-        if (from > max_node) max_node = from;
-        if (to > max_node) max_node = to;
-        edge_count++;
+        g->M[to][from] += 1.0;
+        g->out_degree[from]++;
+        g->n_edges++;
     }
     fclose(fp);
 
-    *n_nodes = max_node + 1;
-
-    for (int i = 0; i < edge_count; i++) {
-        int from = edge_from[i];
-        int to = edge_to[i];
-        M[to][from] = 1.0 / out_degree[from];
+    // 正規化：M[to][from] /= out_degree[from]
+    for (int i = 0; i < g->n_nodes; i++) {
+        for (int j = 0; j < g->n_nodes; j++) {
+            if (g->out_degree[j] > 0) {
+                g->M[i][j] /= g->out_degree[j];
+            }
+        }
     }
 
     return 0;
+}
+
+void free_graph(Graph *g) {
+    for (int i = 0; i < g->n_nodes; i++) {
+        free(g->M[i]);
+    }
+    free(g->M);
+    free(g->out_degree);
 }

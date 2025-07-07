@@ -2,6 +2,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
+import argparse
 
 def visualize_graph(load_file: str, save_file: str, sample_nodes: int = -1):
     G = nx.DiGraph()
@@ -26,7 +27,13 @@ def visualize_graph(load_file: str, save_file: str, sample_nodes: int = -1):
 
 
 if __name__ == "__main__":
-    n_node = 10
-    load_file = f"data/{n_node}/graph.txt"
-    save_file = f"data/{n_node}/graph.png"
+    parser = argparse.ArgumentParser(description="Visualize a graph from a file.")
+    parser.add_argument("--n_node", type=int, default=10, help="Number of nodes (used to construct file paths)")
+    parser.add_argument("--sample_nodes", type=int, default=-1, help="Number of nodes to sample for visualization (-1 for all)")
+    args = parser.parse_args()
+
+    load_file = f"data/{args.n_node}/graph.txt"
+    save_file = f"data/{args.n_node}/graph.png"
+
+    visualize_graph(load_file=load_file, save_file=save_file, sample_nodes=args.sample_nodes)
     visualize_graph(load_file=load_file, save_file=save_file)

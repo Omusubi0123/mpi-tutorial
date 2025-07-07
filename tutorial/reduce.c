@@ -13,10 +13,11 @@ int main(int argc, char** argv) {
 
     MPI_Reduce(&value, &sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
+    double average = (double)sum / size;
     if (rank == 0) {
-        double average = (double)sum / size;
-        printf("Total sum = %d\n", sum);
-        printf("Average = %.2f\n", average);
+        printf("Rank %d: sum = %d, avg = %.2f\n", rank, sum, average);
+    } else {
+        printf("Rank %d: sum = %d, avg = %.2f\n", rank, sum, average);
     }
 
     MPI_Finalize();

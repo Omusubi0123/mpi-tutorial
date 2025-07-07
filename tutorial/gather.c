@@ -17,14 +17,16 @@ int main(int argc, char** argv) {
     int recv_data[ITEMS_PER_PROC * size];
 
     MPI_Gather(send_data, ITEMS_PER_PROC, MPI_INT,
-               recv_data, ITEMS_PER_PROC, MPI_INT,
-               0, MPI_COMM_WORLD);
-
+        recv_data, ITEMS_PER_PROC, MPI_INT,
+        0, MPI_COMM_WORLD);
+        
     if (rank == 0) {
         printf("Rank 0 gathered data: ");
         for (int i = 0; i < ITEMS_PER_PROC * size; i++)
             printf("%d ", recv_data[i]);
         printf("\n");
+    } else {
+        printf("Rank %d sent data: %d %d\n", rank, send_data[0], send_data[1]);
     }
 
     MPI_Finalize();

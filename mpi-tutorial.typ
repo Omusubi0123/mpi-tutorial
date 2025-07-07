@@ -17,7 +17,7 @@
     title: [MPI],
     subtitle: [Spring Training 2025],
     author: [Yoshihiro Izawa],
-    date: [2025/05/13],
+    date: [2025/07/09],
   ),
 )
 #set text(font: "Noto Serif CJK JP", size: 18pt)
@@ -126,7 +126,7 @@
 - I developed a simple MPI simulation website for learning MPI.
 - Please Click on: #blink("https://mpi-simulator.vercel.app/")[Izawa MPI Simulation Website]
 #align(center)[
-  #image("images/simulator.png", width: 60%)
+  #image("images/simulator.png", width: 70%)
 ]
 ]
 
@@ -1033,9 +1033,88 @@ Rank 3: total sum = 10, average = 2.50
 ]
 
 
+= Application Example
+== Page Rank Calculation
+#slide[
+- For a simple application example of MPI, I will introduce the Page Rank calculation.
+- *Page Rank* is an algorithm #underline[used by Google to rank web pages] in search results.
+- Page Rank mathematical formula is as follows: 
+$ x^{(k+1)} = d M x^{(k)} + (1 - d) v $
+- where:
+  - *M* is the link matrix, each element represents #underline[the link between pages],
+  - *x* is the Page Rank vector, each element represents #underline[the Page Rank of a page],
+  - *d* is the #underline[damping factor], usually set to 0.85,
+  - *v* is the uniform distribution vector (initial vector).
+
+#image("images/page_rank_graph.png", width: 20%)
+$
+d = 0.85
+,
+M = mat(0, 0, 1/3, 0;
+        1/2, 0, 1/3, 0;
+        1/2, 1, 1/3, 1;
+        0, 0, 0, 0) 
+,
+v = vec(1/4, 1/4, 1/4, 1/4)
+$
+]
+
+#slide[
+$
+M = mat(0, 0, 1/3, 0;
+        1/2, 0, 1/3, 0;
+        1/2, 1, 1/3, 1;
+        0, 0, 0, 0) 
+$
+- The sum of each column in matrix M is 1 because M represents a transition probability matrix, where each column corresponds to a node and the entries indicate the probability of moving from that node to others
+
+- The Page Rank vector is updated iteratively until convergence.
+$ x^{(1)} = d M x^{(0)} + (1 - d) v $
+$ x^{(2)} = d M x^{(1)} + (1 - d) v $
+$ x^{(3)} = d M x^{(2)} + (1 - d) v $
+$ ... $
+]
+
+#slide[
+How to cunduct Page Rank calculation in parallel?
+- Split the link matrix M into submatrices, each assigned to a process.
+- Each process calculates the Page Rank for its submatrix.
+- Use `MPI_Allreduce` to combine the results from all processes.
+- Repeat until convergence.
+- The following code is a simple example of Page Rank calculation using MPI.
+]
+
+#slide(composer: (1fr, 1fr))[
+```sh
+$ cd tutorial/pagerank/
+
+// graph data generation
+$ ./create_venv.sh
+$ python3 preprocess/generate_graph.py
+$ ls data/
+
+// graph data visualization
+$ python3 preprocess/visualize.py
+
+// Page Rank calculation
+$ cd tutorial/pagerank/naive
+$ ./run.sh
+```
+][
+#image("images/graph_n10.png", width: 70%)
+]
+#slide[
+```sh
+$ ./run.sh
+
+Final PageRank:
+         0      1      2      3      4      5      6      7      8      9
+PR: 0.0490 0.0817 0.0678 0.1453 0.0616 0.0748 0.0374 0.0598 0.0453 0.0384
+
+```
+]
+
 = References
-
-
 
 == MPI Reference
 - #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]

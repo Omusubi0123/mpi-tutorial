@@ -796,10 +796,6 @@ MPI_Gather(
 ```c
 #define ITEMS_PER_PROC 2
 ...
-int rank, size;
-MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-MPI_Comm_size(MPI_COMM_WORLD, &size);
-
 int send_data[ITEMS_PER_PROC];
 send_data[0] = rank * 2;
 send_data[1] = rank * 2 + 1;
@@ -815,12 +811,19 @@ if (rank == 0) {
     for (int i = 0; i < ITEMS_PER_PROC * size; i++)
         printf("%d ", recv_data[i]);
     printf("\n");
+} else {
+    printf("Rank %d sent data: %d %d\n", rank, send_data[0], send_data[1]);
 }
 ```
 ][
 ```sh
 $ mpicc gather.c -o gather
 $ mpirun -np 4 ./gather
+
+Rank 1 sent data: 2 3
+Rank 3 sent data: 6 7
+Rank 2 sent data: 4 5
+Rank 0 gathered data: 0 1 2 3 4 5 6 7
 ```
 ]
 
@@ -871,6 +874,11 @@ printf("\n");
 ```sh
 $ mpicc allgather.c -o allgather
 $ mpirun -np 4 ./allgather
+
+Rank 2 received: 0 1 10 11 20 21 30 31
+Rank 3 received: 0 1 10 11 20 21 30 31
+Rank 0 received: 0 1 10 11 20 21 30 31
+Rank 1 received: 0 1 10 11 20 21 30 31
 ```
 ]
 
@@ -923,18 +931,70 @@ int sum;
 
 MPI_Reduce(&value, &sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
+double average = (double)sum / size;
 if (rank == 0) {
-    double average = (double)sum / size;
-    printf("Total sum = %d\n", sum);
-    printf("Average = %.2f\n", average);
+    printf("Rank %d: sum = %d, avg = %.2f\n", rank, sum, average);
+} else {
+    printf("Rank %d: sum = %d, avg = %.2f\n", rank, sum, average);
 }
 ```
 ][
 ```sh
 $ mpicc reduce.c -o reduce
 $ mpirun -np 4 ./reduce
+
+Rank 1: sum = 4197236, avg = 1049309.00
+Rank 0: sum = 10, avg = 2.50
+Rank 2: sum = 4197236, avg = 1049309.00
+Rank 3: sum = 4197236, avg = 1049309.00
 ```
 ]
+
+
+#slide[
+=== MPI_Allreduce
+- *MPI_Allreduce* is a collective communication function that collects data from all processes in a communicator, applies a reduction operation to the data, and distributes the result to all processes.
+- It is similar to `MPI_Reduce`, but the result is available to all processes, not just the root process.
+- This is useful when all processes need to know the result of the reduction operation.
+
+```c
+MPI_Allreduce(
+    void* send_data,        // data buffer address to send
+    void* recv_data,        // data buffer address to receive
+    int count,              // number of elements to send from each process
+    MPI_Datatype datatype,  // data type of the elements to send
+    MPI_Op op,              // reduction operation to apply
+    MPI_Comm communicator   // communicator
+);
+```
+]
+
+#slide(composer: (1fr, 1fr))[
+```c
+int rank, size;
+MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+int value = rank + 1;
+int total_sum = 0;
+
+MPI_Allreduce(&value, &total_sum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+double average = (double)total_sum / size;
+printf("Rank %d: total sum = %d, average = %.2f\n", rank, total_sum, average);
+```
+][
+```sh
+$ mpicc allreduce.c -o allreduce
+$ mpirun -np 4 ./allreduce
+
+Rank 2: total sum = 10, average = 2.50
+Rank 1: total sum = 10, average = 2.50
+Rank 0: total sum = 10, average = 2.50
+Rank 3: total sum = 10, average = 2.50
+```
+]
+
 
 = References
 

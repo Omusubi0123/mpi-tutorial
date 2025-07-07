@@ -554,6 +554,10 @@ MPI_Recv(
 - `MPI_Barrier(MPI_Comm communicator);`
 ]
 
+#align(center)[
+  #image("images/barrier.png", width: 80%)
+]
+
 #slide(composer: (1fr, 1fr))[
 ```c
   int rank, size;
@@ -600,6 +604,10 @@ MPI_Bcast(
 ```
 - Root Process: Sends the data to all other processes.
 - Other Processes: Receive the data from the root process.
+]
+
+#align(center)[
+  #image("images/bcast.png", width: 80%)
 ]
 
 #slide(composer: (1fr, 1fr))[
@@ -672,7 +680,7 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
 ...
 ]
 
-#slide[
+#align(center)[
 - Comparison of `MPI_Bcast` and `my_bcast`
 - Average time of 10 trials
 #table(
@@ -699,10 +707,8 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
 
 #image("images/bcast_time_comparison.png", width: 80%)
 
-== MPI_Scatter, MPI_Gather, MPI_Allgather
-
+== MPI_Scatter
 #slide[
-=== MPI_Scatter
 - *MPI_Scatter* is a collective communication function that distributes data from a root process to all other processes in a communicator.
 - `MPI_Bcast` sends the same data to all processes, while `MPI_Scatter` sends different chunks of data to each process.
 ```c
@@ -719,6 +725,10 @@ MPI_Scatter(
 ```
 - `send_count`: the number of elements to send to each process.
 - `recv_count`: the number of elements to receive from each process.
+]
+
+#align(center)[
+  #image("images/scatter.png", width: 70%)
 ]
 
 #slide(composer: (1fr, 1fr))[
@@ -772,9 +782,8 @@ Rank 3 received: 18 19 20 -875497504 65535 20
 ```
 ]
 
-
+== MPI_Gather
 #slide[
-=== MPI_Gather
 - *MPI_Gather* is a collective communication function that collects data from all processes in a communicator and sends it to a root process.
 - It is the reverse operation of `MPI_Scatter`.
 - This is used in parallel sorting, parallel searching, and other parallel algorithms.
@@ -792,6 +801,10 @@ MPI_Gather(
 ```
 - Except for the root process, pass `NULL` for `recv_data` is allowed.
 - `recv_count` is the number of elements to receive from each process, not the total number of elements.
+]
+
+#align(center)[
+  #image("images/gather.png", width: 70%)
 ]
 
 #slide(composer: (1fr, 1fr))[
@@ -829,8 +842,8 @@ Rank 0 gathered data: 0 1 2 3 4 5 6 7
 ```
 ]
 
+== MPI_Allgather
 #slide[
-=== MPI_Allgather
 - `MPI_Scatter` and `MPI_Gather` conduct many-to-one or one-to-many communication.
 - It is useful if you send data from multiple processed to multiple processes.
 - *MPI_Allgather* is a collective communication function that collects data from all processes in a communicator and sends it to all other processes.
@@ -847,6 +860,10 @@ MPI_Allgather(
 );
 ```
 - `MPI_Allgather` does not have a root process parameter.
+]
+
+#align(center)[
+  #image("images/allgather.png", width: 70%)
 ]
 
 #slide(composer: (1fr, 1fr))[
@@ -885,9 +902,8 @@ Rank 1 received: 0 1 10 11 20 21 30 31
 ]
 
 
-== MPI_Reduce, MPI_Allreduce
+== MPI_Reduce
 #slide[
-=== MPI_Reduce
 - `reduce` is a basic concept in functional programming. It transforms a set of numbers into a smaller set of numbers.
   - `reduce([1, 2, 3, 4, 5], sum) = 15`
   - `reduce([1, 2, 3, 4, 5], multiply) = 120`
@@ -922,6 +938,10 @@ MPI_Reduce(
   - *MPI_MAXLOC* - maximum value and its rank
 ]
 
+#align(center)[
+  #image("images/reduce.png", width: 70%)
+]
+
 #slide(composer: (1fr, 1fr))[
 ```c
 int rank, size;
@@ -953,8 +973,8 @@ Rank 3: sum = 4197236, avg = 1049309.00
 ]
 
 
+== MPI_Allreduce
 #slide[
-=== MPI_Allreduce
 - *MPI_Allreduce* is a collective communication function that collects data from all processes in a communicator, applies a reduction operation to the data, and distributes the result to all processes.
 - It is similar to `MPI_Reduce`, but the result is available to all processes, not just the root process.
 - This is useful when all processes need to know the result of the reduction operation.
@@ -969,6 +989,10 @@ MPI_Allreduce(
     MPI_Comm communicator   // communicator
 );
 ```
+]
+
+#align(center)[
+  #image("images/allreduce.png", width: 70%)
 ]
 
 #slide(composer: (1fr, 1fr))[

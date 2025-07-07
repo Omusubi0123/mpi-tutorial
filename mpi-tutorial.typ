@@ -121,6 +121,15 @@
 
 = Basic Learning of MPI
 
+== MPI Simulation
+#slide[
+- I developed a simple MPI simulation site for learning MPI.
+- Please Click on: #blink("https://v0-mpi-operation-images.vercel.app/")[Izawa MPI Simulation]
+#align(center)[
+  #image("images/simulator.png", width: 60%)
+]
+]
+
 == Minimum MPI Program
 
 #slide(composer: (3fr, 2fr))[
@@ -511,7 +520,7 @@ MPI_Recv(
 ```
 ]
 
-#slide[
+#align(center)[
   #table(
     columns: (auto, auto),
     inset: 7pt,
@@ -705,7 +714,9 @@ void my_bcast(void* data, int count, MPI_Datatype datatype, int root, MPI_Comm c
 )
 ]
 
-#image("images/bcast_time_comparison.png", width: 80%)
+#align((center))[
+  #image("images/bcast_time_comparison.png", width: 80%)
+]
 
 == MPI_Scatter
 #slide[

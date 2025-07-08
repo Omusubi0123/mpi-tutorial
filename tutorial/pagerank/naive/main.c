@@ -15,8 +15,21 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    if (argc < 2) {
+        if (rank == 0) {
+            fprintf(stderr, "Usage: %s <n_node>\n", argv[0]);
+        }
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+
+    int n_node = atoi(argv[1]);
+    char graph_path[256], pagerank_path[256];
+    snprintf(graph_path, sizeof(graph_path), "data/%d/graph.txt", n_node);
+    snprintf(pagerank_path, sizeof(pagerank_path), "data/%d/pagerank.txt", n_node);
+
     Graph g;
-    if (read_graph("../data/10/graph.txt", &g) != 0) {
+
+    if (read_graph(graph_path, &g) != 0) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -44,6 +57,12 @@ int main(int argc, char **argv) {
         displs[i] = i * rows_per_proc + (i < remainder ? i : remainder);
     }
 
+    if (rank == 0) {
+        printf("Starting PageRank computation with %d processes...\n", size);
+    }
+    printf("[Rank %d] Local rows: %d, Start index: %d\n", rank, my_rows, my_start);
+    double t_start = MPI_Wtime();
+
     for (int iter = 0; iter < MAX_ITER; iter++) {
         for (int i = 0; i < my_rows; i++) {
             int global_i = my_start + i;
@@ -63,7 +82,7 @@ int main(int argc, char **argv) {
             for (int i = 0; i < n; i++) {
                 diff += fabs(new_x_full[i] - x[i]);
             }
-            printf("[Iter %d] diff = %.4f   ", iter + 1, diff);
+            printf("[Iter %d] diff = %f\n", iter + 1, diff);
         }
 
         // 全rankにdiffをブロードキャスト（終了判定共有）
@@ -74,6 +93,11 @@ int main(int argc, char **argv) {
         for (int i = 0; i < n; i++) x[i] = new_x_full[i];
     }
 
+    double t_end = MPI_Wtime();
+    if (rank == 0) {
+        printf("Main Loop Time: %.6f seconds\n", t_end - t_start);
+    }
+
     free(new_x_full);
     free(recvcounts);
     free(displs);
@@ -81,15 +105,25 @@ int main(int argc, char **argv) {
     // 結果表示
     if (rank == 0) {
         printf("\n\nFinal PageRank:\n");
-        printf("    ");
         for (int i = 0; i < n; i++) {
-            printf("%6d ", i);
-        }
-        printf("\nPR: ");
-        for (int i = 0; i < n; i++) {
-            printf("%6.4f ", x[i]);
+            printf("Node %6d: %f\n", i, x[i]);
         }
         printf("\n");
+    }
+
+    // 結果をファイルに書き出す
+    if (rank == 0) {
+        FILE *fp = fopen(pagerank_path, "w");
+        if (fp == NULL) {
+            perror("Failed to open result file");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+        fprintf(fp, "%d\n", n);
+        for (int i = 0; i < n; i++) {
+            fprintf(fp, "%d %f\n", i, x[i]);
+        }
+        fclose(fp);
+        printf("PageRank results written to %s\n", pagerank_path);
     }
 
     free(x);

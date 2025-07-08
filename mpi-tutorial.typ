@@ -54,17 +54,36 @@
 = MPI Overview
 
 == What is MPI (Message Passing Interface)?
-
 - *A standard API* for message passing between distributed memories in parallel computing.
 - MPI assumes a *distributed-memory computing system*
 - MPI can run on *shared-memory computing system*
-- MPI programming model (basically) uses *SIMD*
+- MPI programming model (basically) uses *SIMD*(Single Instruction, Multiple Data).
 
 == Parallel Programming Classification
-
+#slide[
 - *Multi-Process*: 
     MPI(Message Passing Interface), HPF(High Performance Fortran)
 - *Multi-Thread*: OpenMP, Pthread(POSIX Thread)
+
+#align(center)[
+#set text(size: 16pt)
+#table(
+  columns: (auto, auto, auto),
+  inset: 7pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [Aspect], [MPI], [HPF],
+  [Type], [Parallel communication library], [Fortran language extension],
+  [Language], [C / C++ / Fortran], [Fortran only],
+  [Parallelism Control], [*Fully manual by programmer*], [*Mostly compiler-driven*],
+  [Flexibility], [Very high], [Limited],
+  [Maintainability], [Hard but highly tunable], [Simpler but harder to tune],
+  [Learning Curve], [High], [Low to medium],
+  [Current Usage], [*Mainstream in HPC*], [*Obsolete / deprecated*],
+)
+#set text(size: 18pt)
+]
+]
 
 == MPI Features
 
@@ -82,9 +101,12 @@
   - Debugging is challenging due to concurrency and communiaction complexity.
 
 == Typical example of Usage
-- Simulation on a supercomputer(Physics, Meteorology, Chemistry, etc.)
-- Data processing in large-scale data analysis (e.g., genomics, astronomy).
-- Machine learning training on large datasets (e.g., distributed deep learning).
+- *Simulation on a supercomputer*
+  - Physics, Meteorology, Chemistry, etc.
+- *Data processing in large-scale data analysis*
+  - e.g., genomics, astronomy
+- *Machine learning training on large datasets*
+  - e.g., distributed deep learning
 
 == Comparison between implementations
 
@@ -97,7 +119,7 @@
     stroke: 0.5pt,
     [], [*OpenMPI*], [*MPICH*], [*Intel MPI*],
     [*Developer*], [Universities, Companies], [Argonne National Laboratory], [Intel Corporation],
-    [*Distribution*], [Open source], [Open source], [Free version included],
+    [*Distribution*], [Open source], [Open source], [Closed source],
     [*Optimization Target*], [General purpose], [Lightweight, stable], [Optimized for Intel architecture],
     [*Performance*], [Medium to high], [Lightweight, stable, scalable], [Best performance on Intel CPUs],
     [*Main Use*], [Academic clusters, general HPC], [Research, education], [Commercial HPC, Intel clusters],
@@ -110,14 +132,22 @@
 
 == Key Communication Primitives
 
-- *System function*: `MPI_Init`, `MPI_Finalize`, `MPI_Comm_size`, `MPI_Comm_rank`
-- *Point-to-point communication*: `MPI_Send`, `MPI_Recv`
-- *Collective communication*: `MPI_Bcast`, `MPI_Reduce`, `MPI_Alltoall`
-- *Synchronization*: `MPI_Barrier`, `MPI_Wait`, `MPI_Test`
-- *Derived data types*: `MPI_Type_create_struct`, `MPI_Type_vector`
-- *Non-blocking communication*: `MPI_Isend`, `MPI_Irecv`
-- *Remote memory access*: `MPI_Put`, `MPI_Get`
-- *Process management*: `MPI_Comm_spawn`, `MPI_Comm_free`
+- *System function*: 
+  - `MPI_Init`, `MPI_Finalize`, `MPI_Comm_size`, `MPI_Comm_rank`
+- *Point-to-point communication*: 
+  - `MPI_Send`, `MPI_Recv`
+- *Collective communication*: 
+  - `MPI_Bcast`, `MPI_Reduce`, `MPI_Alltoall`
+- *Synchronization*: 
+  - `MPI_Barrier`, `MPI_Wait`, `MPI_Test`
+- *Derived data types*: 
+  - `MPI_Type_create_struct`, `MPI_Type_vector`
+- *Non-blocking communication*: 
+  - `MPI_Isend`, `MPI_Irecv`
+- *Remote memory access*: 
+  - `MPI_Put`, `MPI_Get`
+- *Process management*: 
+  - `MPI_Comm_spawn`, `MPI_Comm_free`
 
 
 
@@ -132,7 +162,35 @@
 ]
 ]
 
+== Tutorial Programs
+#slide[
+- The follwing programs are available below.
+#blink("https://github.com/Omusubi0123/mpi-tutorial")[MPI Tutorial GitHub Repository]
+]
+
 == Minimum MPI Program
+
+#slide[
+=== MPI Language Differences
+#set text(size: 16pt)
+#table(
+  columns: (auto, auto, auto, auto),
+  inset: 7pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [], [*C*], [*C++*], [*Fortran*],
+  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
+  [*Official MPI support*], [○], [▲], [○],
+  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
+  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
+  [*Scientific computing*], [○], [▲], [◎]
+)
+- C++
+  - MPI-3.0 abolished C++ only bindings.
+  - Currently, C++ also uses C interface.
+- Fortran
+  - Considering readability, type safety, and portability, `use mpi` is recommended.
+]
 
 #slide(composer: (3fr, 2fr))[
 === Hello World (C)
@@ -246,28 +304,6 @@ My Rank:      1
 ```
 ]
 
-#slide[
-=== MPI Language Differences
-#set text(size: 16pt)
-#table(
-  columns: (auto, auto, auto, auto),
-  inset: 7pt,
-  align: center + horizon,
-  stroke: 0.5pt,
-  [], [*C*], [*C++ (※)*], [*Fortran*],
-  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
-  [*Official MPI support*], [○], [▲], [○],
-  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
-  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
-  [*Scientific computing*], [○], [▲], [◎]
-)
-- C++
-  - MPI-3.0 abolished C++ only bindings.
-  - Currently, C++ also uses C interface.
-- Fortran
-  - Considering readability, type safety, and portability, `use mpi` is recommended.
-]
-
 == Important Terms of MPI
 
 #slide[
@@ -296,11 +332,13 @@ My Rank:      1
     - Communicator: MPI_COMM_WORLD
     - Group: [P0, P1, P2, P3]
     - Rank: 0, 1, 2, 3
-  ┌──────────────────────────────────────────┐
-  │       Communicator: MPI_COMM_WORLD       │
-  │       Group: [P0, P1, P2, P3]            │
-  │       Rank:  0    1    2    3            │
-  └──────────────────────────────────────────┘
+
+    MPI_COMM_WORLD (communicator)
+    ├─ Group: { P0, P1, P2, P3 }
+    │   ├─ P0 (rank 0)
+    │   ├─ P1 (rank 1)
+    │   ├─ P2 (rank 2)
+    │   └─ P3 (rank 3)
   ```
   ]
 ]
@@ -391,11 +429,60 @@ World Rank 0 => Group 0, New Rank 0 of 3
       [6], [0],        [{0, 3, 6}],     [2],               [3],
       [7], [1],        [{1, 4, 7}],     [2],               [3],
     )
-  ]
+    ]
   #set text(size: 18pt)
 ]
 
 == Point-to-Point Communication
+#slide[
+- Many MPI functions have the following signature
+- *MPI_Send* sends data to a specific process.
+- *MPI_Recv* receives data from a specific process.
+```c
+MPI_Send(
+    void* data,             // data buffer address
+    int count,              // number of elements in the buffer
+    MPI_Datatype datatype,  // data type of the elements
+    int destination,        // destination process rank
+    int tag,                // message tag (for filtering)
+    MPI_Comm communicator};   // communicator
+```
+```c
+MPI_Recv(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int source,
+    int tag,
+    MPI_Comm communicator,
+    MPI_Status* status);
+```
+]
+
+#align(center)[
+  #table(
+    columns: (auto, auto),
+    inset: 7pt,
+    stroke: 1pt,
+    align: center,
+    [*MPI Data Type*], [*C Type*],
+    [`MPI_SHORT`], [`short int`],
+    [`MPI_INT`], [`int`],
+    [`MPI_LONG`], [`long int`],
+    [`MPI_LONG_LONG`], [`long long int`],
+    [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
+    [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
+    [`MPI_UNSIGNED`], [`unsigned int`],
+    [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
+    [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
+    [`MPI_FLOAT`], [`float`],
+    [`MPI_DOUBLE`], [`double`],
+    [`MPI_LONG_DOUBLE`], [`long double`],
+    [`MPI_BYTE`], [`char`]
+  )
+]
+
+
 #slide[
 #grid(columns: (auto, auto),
 [
@@ -472,85 +559,11 @@ Received Data: 1 2 3 4 5 6 7 8 9 10
 ```
 ]
 
-#slide(composer: (1fr, 1fr))[
-- many MPI functions have the following signature:
-```c
-MPI_Send(
-    void* data,
-    int count,
-    MPI_Datatype datatype,
-    int destination,
-    int tag,
-    MPI_Comm communicator
-);
-```
-][
-```c
-MPI_Recv(
-    void* data,
-    int count,
-    MPI_Datatype datatype,
-    int source,
-    int tag,
-    MPI_Comm communicator,
-    MPI_Status* status
-);
-```
-]
-
-#slide[
-- Many MPI functions have the following signature
-```c
-MPI_Send(
-    void* data,             // data buffer address
-    int count,              // number of elements in the buffer
-    MPI_Datatype datatype,  // data type of the elements
-    int destination,        // destination process rank
-    int tag,                // message tag (for filtering)
-    MPI_Comm communicator   // communicator
-);
-```
-```c
-MPI_Recv(
-    void* data,
-    int count,
-    MPI_Datatype datatype,
-    int source,
-    int tag,
-    MPI_Comm communicator,
-    MPI_Status* status
-);
-```
-]
-
-#align(center)[
-  #table(
-    columns: (auto, auto),
-    inset: 7pt,
-    stroke: 1pt,
-    align: center,
-    [*MPI Data Type*], [*C Type*],
-    [`MPI_SHORT`], [`short int`],
-    [`MPI_INT`], [`int`],
-    [`MPI_LONG`], [`long int`],
-    [`MPI_LONG_LONG`], [`long long int`],
-    [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
-    [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
-    [`MPI_UNSIGNED`], [`unsigned int`],
-    [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
-    [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
-    [`MPI_FLOAT`], [`float`],
-    [`MPI_DOUBLE`], [`double`],
-    [`MPI_LONG_DOUBLE`], [`long double`],
-    [`MPI_BYTE`], [`char`]
-  )
-]
-
 = Collective Coommunication
 
 == syncronization
 
-- Collective communication is a communication method that involves all processes in a communicator.
+- Collective communication is a communication method that #underline[involves all processes in a communicator].
 - In collective communiaction, syncronization among all process is required.
 - All process cannot proceed until all processes reach the same point.
 - To achieve this, MPI provides several collective communication functions.
@@ -787,12 +800,55 @@ Rank 3 received: 14 15 16 17 18
 
 if `send_data` cannot divide by `size`, the last process will receive the remaining data.
 ```sh
-// send_data == 6
+// send_data == recv_data == 6
 
 Rank 0 received: 0 1 2 3 4 5
 Rank 1 received: 6 7 8 9 10 11
 Rank 2 received: 12 13 14 15 16 17
 Rank 3 received: 18 19 20 -875497504 65535 20
+```
+]
+
+#slide[
+- What happens if `send_count` is not the same as `recv_count`?
+
+```c
+int send_data[TOTAL_DATA];
+int send_count = TOTAL_DATA / size;
+int recv_count = TOTAL_DATA / size;
+int recv_data[recv_count];
+
+if (rank == 0) {
+    for (int i = 0; i < TOTAL_DATA; i++) {
+        send_data[i] = i;
+    }
+    printf("Rank 0: Scattering data...\n");
+}
+
+if (rank == 3) {
+    recv_count = 4;
+}
+
+MPI_Scatter(send_data, send_count, MPI_INT,
+            recv_data, recv_count, MPI_INT,
+            0, MPI_COMM_WORLD);
+```
+
+- A: *It will cause an error*.
+```sh
+$ mpicc scatter2.c -o scatter2
+$ mpirun -np 4 ./scatter2
+
+Rank 0: Scattering data...
+Rank 0 received: 0 1 2 3 4
+Rank 1 received: 5 6 7 8 9
+Rank 2 received: 10 11 12 13 14
+[miyabi-g3:1978858] *** An error occurred in MPI_Scatter
+[miyabi-g3:1978858] *** reported by process [1190789121,3]
+[miyabi-g3:1978858] *** on communicator MPI_COMM_WORLD
+[miyabi-g3:1978858] *** MPI_ERR_TRUNCATE: message truncated
+[miyabi-g3:1978858] *** MPI_ERRORS_ARE_FATAL (processes in this communicator will now abort,
+[miyabi-g3:1978858] ***    and potentially your MPI job)
 ```
 ]
 
@@ -859,7 +915,7 @@ Rank 0 gathered data: 0 1 2 3 4 5 6 7
 == MPI_Allgather
 #slide[
 - `MPI_Scatter` and `MPI_Gather` conduct many-to-one or one-to-many communication.
-- It is useful if you send data from multiple processed to multiple processes.
+- It is useful if you send data from multiple processes to multiple processes.
 - *MPI_Allgather* is a collective communication function that collects data from all processes in a communicator and sends it to all other processes.
 - It is like first `MPI_Gather` and then `MPI_Bcast`. Collect data by process rank order.
 ```c
@@ -1037,6 +1093,45 @@ Rank 3: total sum = 10, average = 2.50
 
 
 = Application Example
+== How to Run Multi-node program on Miyabi
+#slide[
+- The following is an example of how to run the Page Rank calculation on a multi-node cluster.
+- When you submit a job to `Miyabi-G` cluster, you can specify the number of node and the number of process per node using `-l select={num_nodes}:mpiprocs={num_procs_per_node}` option.
+- When you run a MPI program on a multi-node cluster, you need to specify the number of processes using `mpirun -np {num_procs}` option.
+Example `run.sh` script:
+```sh
+#!/bin/bash
+#PBS -q debug-g
+#PBS -l select=16:mpiprocs=4
+#PBS -W group_list=gc64
+#PBS -o latest_result.txt
+#PBS -j oe
+...
+mpirun -np 64 ./naive/pagerank_naive
+```
+]
+
+#slide[
+- If you want to run a MPI program on another process-per-node than `mpiprocs`, you can use `--host` option or `--hostfile` option.
+- `--host` option allows you to specify the hostnames and the number of processes per host.
+- `--hostfile` option allows you to specify a file that contains the hostnames and the number of processes per host.
+Example `--host` option:
+```sh
+$ mpirun -np 4 --host node1:2,node2:2 ./your_mpi_program
+→node1 and node2 each run 2 processes.
+```
+Example `--hostfile` option:
+`hostfile.txt`:
+```txt
+node1 slots=2
+node2 slots=2/
+```
+```sh
+$ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
+```
+]
+
+
 == Page Rank Calculation
 #slide[
 - For a simple application example of MPI, I will introduce the Page Rank calculation.
@@ -1207,44 +1302,6 @@ for (int iter = 0; iter < MAX_ITER; iter++) {
 }
 ```
 ])
-]
-
-== How to Run on Multi-node Cluster in Miyabi
-#slide[
-- The following is an example of how to run the Page Rank calculation on a multi-node cluster.
-- When you submit a job to `Miyabi-G` cluster, you can specify the number of node and the number of process per node using `-l select={num_nodes}:mpiprocs={num_procs_per_node}` option.
-- When you run a MPI program on a multi-node cluster, you need to specify the number of processes using `mpirun -np {num_procs}` option.
-Example `run.sh` script:
-```sh
-#!/bin/bash
-#PBS -q debug-g
-#PBS -l select=16:mpiprocs=4
-#PBS -W group_list=gc64
-#PBS -o latest_result.txt
-#PBS -j oe
-...
-mpirun -np 64 ./naive/pagerank_naive
-```
-]
-
-#slide[
-- If you want to run a MPI program on another process-per-node than `mpiprocs`, you can use `--host` option or `--hostfile` option.
-- `--host` option allows you to specify the hostnames and the number of processes per host.
-- `--hostfile` option allows you to specify a file that contains the hostnames and the number of processes per host.
-Example `--host` option:
-```sh
-$ mpirun -np 4 --host node1:2,node2:2 ./your_mpi_program
-→node1 and node2 each run 2 processes.
-```
-Example `--hostfile` option:
-`hostfile.txt`:
-```txt
-node1 slots=2
-node2 slots=2/
-```
-```sh
-$ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
-```
 ]
 
 = References

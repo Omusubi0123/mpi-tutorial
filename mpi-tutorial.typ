@@ -103,6 +103,8 @@
     [*Main Use*], [Academic clusters, general HPC], [Research, education], [Commercial HPC, Intel clusters],
   )
   #set text(size: 16pt)
+- #underline[`Miyabi` uses `OpenMPI`] as the default MPI implementation.(`Miyabi`is the supercomputer system of the University of Tokyo)
+- To be more specific, #underline[`mpicc` on `Miyabi` is bined to `nvc` compiler] (NVIDIA HPC SDK C compiler), which means `NVIDIA HPC SKD` + `MPI` environment is used.
 ]
 
 
@@ -1039,13 +1041,12 @@ Rank 3: total sum = 10, average = 2.50
 #slide[
 - For a simple application example of MPI, I will introduce the Page Rank calculation.
 - *Page Rank* is an algorithm #underline[used by Google to rank web pages] in search results.
-- Page Rank mathematical formula is as follows: 
+- The concept of Page Rank is that "The page is important if it is linked from many other important pages."
 $ x^{(k+1)} = d M x^{(k)} + (1 - d) v $
 - *M* is the link matrix, each element represents #underline[the link between pages],
 - *x* is the Page Rank vector, each element represents #underline[the Page Rank of a page],
 - *d* is the #underline[damping factor], usually set to 0.85,
 - *v* is the uniform distribution vector (initial vector).
-Example:
 #grid(columns: (auto, auto),
 [
 #align(center)[
@@ -1088,6 +1089,11 @@ How to cunduct Page Rank calculation in parallel?
 - Use `MPI_Allreduce` to combine the results from all processes.
 - Repeat until convergence.
 - The following code is a simple example of Page Rank calculation using MPI.
+
+Run Step:
+1. Generate a graph data file.
+2. (option) Visualize the graph data.
+3. Run the Page Rank calculation.
 ]
 
 #slide[
@@ -1124,9 +1130,141 @@ PR: 0.0490 0.0817 0.0678 0.1453 0.0616 0.0748 0.0374 0.0598 0.0453 0.0384
 ]
 ]
 
-= References
+#slide[
+- We divide the `M` matrix into submatrices, each assigned to a process.
+- Each process only have a submatrix of `M` and a subvector of `x_k`(`*x`), but the whole vector of `x_{k+1}`(`*new_x_full`).
+#grid(columns: (auto, auto),
+[
+```c
+typedef struct {
+    int n_nodes;
+    int n_edges;
+    int *out_degree;
+    double **M;
+} Graph;
+...
+Graph g;
+int n = g.n_nodes;
 
-== MPI Reference
-- #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]
-- #blink("https://www.hpci-office.jp/documents/HPC_Programming_Seminar/MPI_20240529.pdf")[並列プログラミング入門]
-- #blink("https://mpitutorial.com/tutorials")[MPI Tutorial]
+// Data partitioning (row-wise)
+int rows_per_proc = n / size;
+int remainder = n % size;
+int my_rows = rows_per_proc + (rank < remainder ? 1 : 0);
+int my_start = rank * rows_per_proc + (rank < remainder ? rank : remainder);
+```
+],[
+```c
+double *x = malloc(n * sizeof(double));
+double *new_x_local = malloc(my_rows * sizeof(double));
+
+for (int i = 0; i < n; i++) x[i] = 1.0 / n;
+
+for (int i = 0; i < size; i++) {
+    recvcounts[i] = rows_per_proc + (i < remainder ? 1 : 0);
+    displs[i] = i * rows_per_proc + (i < remainder ? i : remainder);
+}
+
+double *new_x_full = malloc(n * sizeof(double));
+```
+])
+]
+
+#slide[
+- `MPI_Allgatherv` is different from `MPI_Allgather` in that it allows each process to send a different number of elements.
+#grid(columns: (auto, auto),
+[
+```c
+for (int iter = 0; iter < MAX_ITER; iter++) {
+    for (int i = 0; i < my_rows; i++) {
+        int global_i = my_start + i;
+        new_x_local[i] = 0.0;
+        for (int j = 0; j < n; j++) {
+            new_x_local[i] += g.M[global_i][j] * x[j];
+        }
+        new_x_local[i] = DAMPING * new_x_local[i] + (1.0 - DAMPING) / n;
+    }
+
+    MPI_Allgatherv(new_x_local, my_rows, MPI_DOUBLE,
+                    new_x_full, recvcounts, displs, MPI_DOUBLE, MPI_COMM_WORLD);
+```
+],[
+```c
+    // チェック用：rank 0 が diff を計算
+    double diff = 0.0;
+    if (rank == 0) {
+        for (int i = 0; i < n; i++) {
+            diff += fabs(new_x_full[i] - x[i]);
+        }
+    }
+
+    // 全rankにdiffをブロードキャスト（終了判定共有）
+    MPI_Bcast(&diff, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if (diff < TOL) break;
+
+    // x を更新
+    for (int i = 0; i < n; i++)
+        x[i] = new_x_full[i];
+}
+```
+])
+]
+
+== How to Run on Multi-node Cluster in Miyabi
+#slide[
+- The following is an example of how to run the Page Rank calculation on a multi-node cluster.
+- When you submit a job to `Miyabi-G` cluster, you can specify the number of node and the number of process per node using `-l select={num_nodes}:mpiprocs={num_procs_per_node}` option.
+- When you run a MPI program on a multi-node cluster, you need to specify the number of processes using `mpirun -np {num_procs}` option.
+Example `run.sh` script:
+```sh
+#!/bin/bash
+#PBS -q debug-g
+#PBS -l select=16:mpiprocs=4
+#PBS -W group_list=gc64
+#PBS -o latest_result.txt
+#PBS -j oe
+...
+mpirun -np 64 ./naive/pagerank_naive
+```
+]
+
+#slide[
+- If you want to run a MPI program on another process-per-node than `mpiprocs`, you can use `--host` option or `--hostfile` option.
+- `--host` option allows you to specify the hostnames and the number of processes per host.
+- `--hostfile` option allows you to specify a file that contains the hostnames and the number of processes per host.
+Example `--host` option:
+```sh
+$ mpirun -np 4 --host node1:2,node2:2 ./your_mpi_program
+→node1 and node2 each run 2 processes.
+```
+Example `--hostfile` option:
+`hostfile.txt`:
+```txt
+node1 slots=2
+node2 slots=2/
+```
+```sh
+$ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
+```
+]
+
+= References
+#slide[
+- Referenced in this tutorial: 
+  - #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]
+  - #blink("https://www.hpci-office.jp/documents/HPC_Programming_Seminar/MPI_20240529.pdf")[並列プログラミング入門]
+  - #blink("https://mpitutorial.com/tutorials")[MPI Tutorial]
+
+- For Advanced Users:
+- #blink("https://www.cspp.cc.u-tokyo.ac.jp/hanawa/class/sp20250610.pdf")[行列-行列積(2) 非同期通信 - 東京大学情報基盤センター]
+- #blink("https://github.com/open-mpi/ompi")[Open MPI GitHub Repository]
+]
+
+= Appendix
+== How to use Page Rank when requested a search query
+#slide[
+- Page Rank is just a algorithm to rank web pages.
+- The requested search query is just a string, so we cannot use Page Rank directly.
+- One approach is:
+  1. we get related web pages according to DF-IDF or BM25 algorithm
+  2. then we apply Page Rank to rerank the related web pages.
+]

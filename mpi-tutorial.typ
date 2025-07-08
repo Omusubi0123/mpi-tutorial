@@ -103,6 +103,8 @@
     [*Main Use*], [Academic clusters, general HPC], [Research, education], [Commercial HPC, Intel clusters],
   )
   #set text(size: 16pt)
+- #underline[`Miyabi` uses `OpenMPI`] as the default MPI implementation.(`Miyabi`is the supercomputer system of the University of Tokyo)
+- To be more specific, #underline[`mpicc` on `Miyabi` is bined to `nvc` compiler] (NVIDIA HPC SDK C compiler), which means `NVIDIA HPC SKD` + `MPI` environment is used.
 ]
 
 
@@ -1039,13 +1041,12 @@ Rank 3: total sum = 10, average = 2.50
 #slide[
 - For a simple application example of MPI, I will introduce the Page Rank calculation.
 - *Page Rank* is an algorithm #underline[used by Google to rank web pages] in search results.
-- Page Rank mathematical formula is as follows: 
+- The concept of Page Rank is that "The page is important if it is linked from many other important pages."
 $ x^{(k+1)} = d M x^{(k)} + (1 - d) v $
 - *M* is the link matrix, each element represents #underline[the link between pages],
 - *x* is the Page Rank vector, each element represents #underline[the Page Rank of a page],
 - *d* is the #underline[damping factor], usually set to 0.85,
 - *v* is the uniform distribution vector (initial vector).
-Example:
 #grid(columns: (auto, auto),
 [
 #align(center)[
@@ -1239,7 +1240,7 @@ Example `--hostfile` option:
 `hostfile.txt`:
 ```txt
 node1 slots=2
-node2 slots=2
+node2 slots=2/
 ```
 ```sh
 $ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
@@ -1247,8 +1248,23 @@ $ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
 ]
 
 = References
+#slide[
+- Referenced in this tutorial: 
+  - #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]
+  - #blink("https://www.hpci-office.jp/documents/HPC_Programming_Seminar/MPI_20240529.pdf")[並列プログラミング入門]
+  - #blink("https://mpitutorial.com/tutorials")[MPI Tutorial]
 
-== MPI Reference
-- #blink("https://www.cc.u-tokyo.ac.jp/events/lectures/17/MPIprogC.pdf")[MPI「超」入門（C言語編）- 東京大学情報基盤センター]
-- #blink("https://www.hpci-office.jp/documents/HPC_Programming_Seminar/MPI_20240529.pdf")[並列プログラミング入門]
-- #blink("https://mpitutorial.com/tutorials")[MPI Tutorial]
+- For Advanced Users:
+- #blink("https://www.cspp.cc.u-tokyo.ac.jp/hanawa/class/sp20250610.pdf")[行列-行列積(2) 非同期通信 - 東京大学情報基盤センター]
+- #blink("https://github.com/open-mpi/ompi")[Open MPI GitHub Repository]
+]
+
+= Appendix
+== How to use Page Rank when requested a search query
+#slide[
+- Page Rank is just a algorithm to rank web pages.
+- The requested search query is just a string, so we cannot use Page Rank directly.
+- One approach is:
+  1. we get related web pages according to DF-IDF or BM25 algorithm
+  2. then we apply Page Rank to rerank the related web pages.
+]

@@ -394,7 +394,9 @@ World Rank 0 => Group 0, New Rank 0 of 3
 ]
 
 == Point-to-Point Communication
-#slide(composer: (1fr, 1fr))[
+#slide[
+#grid(columns: (auto, auto),
+[
 `send_data()`
 ```c
 int send_data[10];
@@ -410,7 +412,7 @@ printf(" ]\n");
 
 MPI_Send((void*)send_data, data_count, MPI_INT, 1, 0, MPI_COMM_WORLD);
 ```
-][
+],[
 `recv_data()`
 ```c
 int data[10];
@@ -424,18 +426,17 @@ for (int i = 0; i < 10; i++)
     printf(" %d", data[i]);
 printf(" ]\n");
 ```
-]
-
-#slide[
+])
+#align(center)[
 ```sh
 $ mpicc send_recv.c -o mpi_send_recv
 $ mpirun -np 2 ./mpi_send_recv
-
 Rank 0: Sending data.
 send_data: [ 1 2 3 4 5 6 7 8 9 10 ]
 Rank 1: Receiving data.
 recv_data: [ 1 2 3 4 5 6 7 8 9 10 ]
 ```
+]
 ]
 
 #slide[
@@ -1040,13 +1041,17 @@ Rank 3: total sum = 10, average = 2.50
 - *Page Rank* is an algorithm #underline[used by Google to rank web pages] in search results.
 - Page Rank mathematical formula is as follows: 
 $ x^{(k+1)} = d M x^{(k)} + (1 - d) v $
-- where:
-  - *M* is the link matrix, each element represents #underline[the link between pages],
-  - *x* is the Page Rank vector, each element represents #underline[the Page Rank of a page],
-  - *d* is the #underline[damping factor], usually set to 0.85,
-  - *v* is the uniform distribution vector (initial vector).
-
-#image("images/page_rank_graph.png", width: 20%)
+- *M* is the link matrix, each element represents #underline[the link between pages],
+- *x* is the Page Rank vector, each element represents #underline[the Page Rank of a page],
+- *d* is the #underline[damping factor], usually set to 0.85,
+- *v* is the uniform distribution vector (initial vector).
+Example:
+#grid(columns: (auto, auto),
+[
+#align(center)[
+  #image("images/page_rank_graph.png", width: 40%)
+]
+],[
 $
 d = 0.85
 ,
@@ -1057,6 +1062,7 @@ M = mat(0, 0, 1/3, 0;
 ,
 v = vec(1/4, 1/4, 1/4, 1/4)
 $
+])
 ]
 
 #slide[
@@ -1084,7 +1090,9 @@ How to cunduct Page Rank calculation in parallel?
 - The following code is a simple example of Page Rank calculation using MPI.
 ]
 
-#slide(composer: (1fr, 1fr))[
+#slide[
+#grid(columns: (auto, auto),
+[
 ```sh
 $ cd tutorial/pagerank/
 
@@ -1100,18 +1108,20 @@ $ python3 preprocess/visualize.py
 $ cd tutorial/pagerank/naive
 $ ./run.sh
 ```
-][
-#image("images/graph_n10.png", width: 70%)
+],[
+#align(center)[
+  #image("images/graph_n10.png", width: 60%)
 ]
-#slide[
+])
+#align(center)[
 ```sh
 $ ./run.sh
 
 Final PageRank:
          0      1      2      3      4      5      6      7      8      9
 PR: 0.0490 0.0817 0.0678 0.1453 0.0616 0.0748 0.0374 0.0598 0.0453 0.0384
-
 ```
+]
 ]
 
 = References

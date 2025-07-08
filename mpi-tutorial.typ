@@ -149,7 +149,27 @@
 - *Process management*: 
   - `MPI_Comm_spawn`, `MPI_Comm_free`
 
-
+== Internal Mechanisms of MPI Communication
+#slide[
+- MPI implementations (e.g., MPICH, OpenMPI) rely on various OS system calls and low-level libraries for communication.
+#list(
+  [*Intra-node Communication (within the same node)*:
+    - Shared memory: `mmap`, `shm_open`, `memfd_create`, System V `shm`
+    - Event waiting: `futex`, `poll`, `epoll`, `select`
+    - Pipes & sockets: `write`, `read`
+    - UNIX domain sockets: `sendmsg`, `recvmsg`
+    - Synchronization: `sem_open`, `pthread_mutex`, `spinlock`
+  ],
+  [*Inter-node Communication (across nodes)*:
+    - TCP/IP sockets: `socket`, `bind`, `listen`, `accept`, `connect`, `send`, `recv`, `sendto`, `recvfrom`
+    - RDMA & verbs API (e.g., InfiniBand) for zero-copy communication
+  ],
+  [*High-Performance Cluster Communication*:
+    - Libraries: `libibverbs`, `UCX`, `OFI (Libfabric)`, `XPMEM`, `NVLink`
+    - Kernel bypass with DMA (Direct Memory Access) for low-latency, high-throughput transfers
+  ]
+)
+]
 
 = Basic Learning of MPI
 

@@ -57,7 +57,7 @@
 - *A standard API* for message passing between distributed memories in parallel computing.
 - MPI assumes a *distributed-memory computing system*
 - MPI can run on *shared-memory computing system*
-- MPI programming model (basically) uses *SIMD*(Single Instruction, Multiple Data).
+- MPI programming model (basically) uses *SPMD*(Single Program, Multiple Data).
 
 == Parallel Programming Classification
 #slide[
@@ -94,11 +94,11 @@
 - *Multi-node Capacity*: 
   - Can run across multiple nodes; abstracts network communication.
 - *Standardized API*: 
-  - Standardized interface in C, C++, and Fortran; hightly portable.
+  - Standardized interface in C, C++, and Fortran; highly portable.
 - *Multiple Implementation*: 
   - Available implementations include OpenMPI, MPICH, and Intel MPI, etc.
 - *Difficult to Debug*: 
-  - Debugging is challenging due to concurrency and communiaction complexity.
+  - Debugging is challenging due to concurrency and communication complexity.
 
 == Typical example of Usage
 - *Simulation on a supercomputer*
@@ -126,7 +126,7 @@
   )
   #set text(size: 16pt)
 - #underline[`Miyabi` uses `OpenMPI`] as the default MPI implementation.(`Miyabi`is the supercomputer system of the University of Tokyo)
-- To be more specific, #underline[`mpicc` on `Miyabi` is bined to `nvc` compiler] (NVIDIA HPC SDK C compiler), which means `NVIDIA HPC SKD` + `MPI` environment is used.
+- To be more specific, #underline[`mpicc` on `Miyabi` is bound to `nvc` compiler] (NVIDIA HPC SDK C compiler), which means `NVIDIA HPC SDK` + `MPI` environment is used.
 ]
 
 
@@ -184,7 +184,7 @@
 
 == Tutorial Programs
 #slide[
-- The follwing programs are available below.
+- The following programs are available below.
 #blink("https://github.com/Omusubi0123/mpi-tutorial")[MPI Tutorial GitHub Repository]
 ]
 
@@ -347,7 +347,7 @@ My Rank:      1
 - Each process in a communicator has a unique *rank*.
   #align(center)[
   ```
-  - Eaxmple:
+  - Example:
     - Process 0, 1, 2, 3 belong to a group.
     - Communicator: MPI_COMM_WORLD
     - Group: [P0, P1, P2, P3]
@@ -600,12 +600,12 @@ Received Data: 1 2 3 4 5 6 7 8 9 10
 ```
 ]
 
-= Collective Coommunication
+= Collective Communication
 
-== syncronization
+== synchronization
 
 - Collective communication is a communication method that #underline[involves all processes in a communicator].
-- In collective communiaction, syncronization among all process is required.
+- In collective communication, synchronization among all process is required.
 - All process cannot proceed until all processes reach the same point.
 - To achieve this, MPI provides several collective communication functions.
 
@@ -615,8 +615,8 @@ Received Data: 1 2 3 4 5 6 7 8 9 10
 - *MPI_Barrier* is a collective communication function that synchronizes all processes in a communicator.
 - All processes must call `MPI_Barrier` to ensure that all processes reach the same point before proceeding.
 - It is often used to ensure that all processes have completed their previous tasks before moving on to the next step.
-- The most basic usage of `MPI_Barrier` is to precise time measurement.
-- If you do not call `MPI_Barrier` in all processed, the program will block and cannot proceed.
+- The most basic usage of `MPI_Barrier` is for precise time measurement.
+- If you do not call `MPI_Barrier` in all processes, the program will block and cannot proceed.
 - `MPI_Barrier(MPI_Comm communicator);`
 ]
 
@@ -1018,7 +1018,7 @@ Rank 1 received: 0 1 10 11 20 21 30 31
 - `reduce` is a basic concept in functional programming. It transforms a set of numbers into a smaller set of numbers.
   - `reduce([1, 2, 3, 4, 5], sum) = 15`
   - `reduce([1, 2, 3, 4, 5], multiply) = 120`
-- Collect distribulted data and apply a reduction operation is a tough task. However, MPI provides a simple interface to do this.
+- Collect dictributed data and apply a reduction operation is a tough task. However, MPI provides a simple interface to do this.
 - *MPI_Reduce* is a collective communication function that collects data from all processes in a communicator to the root process, and applies a reduction operation to the data.
 ]
 

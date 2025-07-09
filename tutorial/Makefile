@@ -25,7 +25,7 @@ run:
 	base=$$(basename "$$src" .$$ext); \
 	exe="$$dir/bin/$$base"; \
 	if [ ! -f "$$exe" ]; then echo "Executable $$exe not found. Run 'make compile FILE=$$src' first."; exit 1; fi; \
-	np=$${NP:-4}; \
+	if [ -n "$(NP)" ]; then np="$(NP)"; else np=4; fi; \
 	echo "Running $$exe with $$np processes"; \
 	mpirun -np "$$np" "$$exe"
 

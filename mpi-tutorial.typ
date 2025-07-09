@@ -370,18 +370,33 @@ My Rank:      1
 - A #underline[group can create multiple communicators].
 - A #underline[communicator cannnot communicate with other communicators].
 
-```
-Group A: {a, b, c}
-↓ Communicator B created from Group A
-Communicator B: {a, b, c, d}
+Q&A
+- Q: Q: Can processes be added to an existing group?
+- A: No. You cannot add processes to an existing group.
 
-↓ Communicator C created from Group A
-Communicator C: {a, b, c, e}
-
-- ○ a, b, c ↔ d （via Communicator B）
-- ○ a, b, c ↔ e （via Communicator C）
-- x d ↔ e       （cannot communicate）
+]
+#slide[
+*Attention*
+- #underline[A single process can belong to multiple groups and communications].
+- In such cases, #underline[the process has a unique rank within each communicator].
 ```
+  MPI_COMM_WORLD
+    |- Group A: {0, 1, 2, 3, 4}
+
+↓ Communicator B (created from Group A)
+    |- Group B {0, 1, 2, 3}
+
+↓ Communicator C (created from Group A)
+    |- Group C {0, 1, 2, 4}
+
+↓
+- ○ 0, 1, 2 ↔ 3 （via Communicator B）
+- ○ 0, 1, 2 ↔ 4 （via Communicator C）
+- ○ 3 ↔ 4       （via Communicator A）
+- x 3 ↔ 4       （via Communicator B and C）
+```
+- In the above example, process 0 belongs to three communicators: 
+  - `MPI_COMM_WORLD` (Group A), `Communicator B` (Group B), `Communicator C` (Group C)
 ]
 
 #slide[
@@ -1598,4 +1613,113 @@ MPI_Finalize();
 return 0;
 }
 ```
+]
+
+#slide[
+== Example code of Communication and Group
+- Example code of p.21 slide 
+#grid(columns: (auto, auto),
+[
+```c
+MPI_Group world_group;
+MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+// === Group A: {0,1,2,3} ===
+int ranks_a[] = {0, 1, 2, 3};
+MPI_Group group_a;
+MPI_Group_incl(world_group, 4, ranks_a, &group_a);
+MPI_Comm comm_a;
+MPI_Comm_create_group(MPI_COMM_WORLD, group_a, 0, &comm_a);
+// === Group B: {0,1,2,4} ===
+int ranks_b[] = {0, 1, 2, 4};
+MPI_Group group_b;
+MPI_Group_incl(world_group, 4, ranks_b, &group_b);
+MPI_Comm comm_b;
+MPI_Comm_create_group(MPI_COMM_WORLD, group_b, 1, &comm_b);
+```
+],[
+```c
+// Rank 0 in each comm sends a message to others
+if (comm_a != MPI_COMM_NULL) {
+    int comm_a_rank;
+    MPI_Comm_rank(comm_a, &comm_a_rank);
+    if (comm_a_rank == 0) {
+        int msg = 100;
+        for (int i = 1; i < 4; i++)
+            MPI_Send(&msg, 1, MPI_INT, i, 0, comm_a);
+    } else {
+        int recv;
+        MPI_Recv(&recv, 1, MPI_INT, 0, 0, comm_a, MPI_STATUS_IGNORE);
+        printf("comm_a: World Rank %d received %d from Rank 0\n", world_rank, recv);
+    }
+}
+```
+])
+]
+#slide[
+#grid(columns: (auto, auto),
+[
+```c
+if (comm_b != MPI_COMM_NULL) {
+    int comm_b_rank;
+    MPI_Comm_rank(comm_b, &comm_b_rank);
+    if (comm_b_rank == 0) {
+        int msg = 200;
+        for (int i = 1; i < 4; i++)
+            MPI_Send(&msg, 1, MPI_INT, i, 0, comm_b);
+    } else {
+        int recv;
+        MPI_Recv(&recv, 1, MPI_INT, 0, 0, comm_b, MPI_STATUS_IGNORE);
+        printf("comm_b: World Rank %d received %d from Rank 0\n", world_rank, recv);
+    }
+}
+```
+],[
+```c
+// Rank 3 sends a message to Rank 4 via (failed)
+if (world_rank == 3) {
+    int msg = 999;
+    int rc = MPI_Send(&msg, 1, MPI_INT, 4, 99, MPI_COMM_WORLD);
+    printf("Rank 3 tried to send to Rank 4 via MPI_COMM_WORLD (rc=%d)\n", rc);
+}
+
+if (world_rank == 4) {
+    int recv, flag;
+    MPI_Status status;
+    MPI_Iprobe(3, 99, MPI_COMM_WORLD, &flag, &status);
+    if (flag) {
+        MPI_Recv(&recv, 1, MPI_INT, 3, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("Rank 4 received unexpected message from Rank 3: %d\n", recv);
+    } else {
+        printf("Rank 4: No message from Rank 3 (as expected)\n");
+    }
+}
+```
+])
+]
+#slide[
+#grid(columns: (auto, auto),
+[
+```c
+// Cleanup
+if (comm_a != MPI_COMM_NULL) MPI_Comm_free(&comm_a);
+if (comm_b != MPI_COMM_NULL) MPI_Comm_free(&comm_b);
+MPI_Group_free(&group_a);
+MPI_Group_free(&group_b);
+MPI_Group_free(&world_group);
+```
+],[
+```sh
+$ mpicc comm_group.c -o comm_group
+$ mpirun -np 5 ./comm_group
+
+comm_a: World Rank 1 received 100 from Rank 0
+comm_b: World Rank 1 received 200 from Rank 0
+comm_a: World Rank 3 received 100 from Rank 0
+Rank 3 tried to send to Rank 4 via MPI_COMM_WORLD (rc=0)
+comm_a: World Rank 2 received 100 from Rank 0
+comm_b: World Rank 2 received 200 from Rank 0
+comm_b: World Rank 4 received 200 from Rank 0
+Rank 4: No message from Rank 3 (as expected)
+```
+])
 ]

@@ -54,17 +54,36 @@
 = MPI Overview
 
 == What is MPI (Message Passing Interface)?
-
 - *A standard API* for message passing between distributed memories in parallel computing.
 - MPI assumes a *distributed-memory computing system*
 - MPI can run on *shared-memory computing system*
-- MPI programming model (basically) uses *SIMD*
+- MPI programming model (basically) uses *SPMD*(Single Program, Multiple Data).
 
 == Parallel Programming Classification
-
+#slide[
 - *Multi-Process*: 
     MPI(Message Passing Interface), HPF(High Performance Fortran)
 - *Multi-Thread*: OpenMP, Pthread(POSIX Thread)
+
+#align(center)[
+#set text(size: 16pt)
+#table(
+  columns: (auto, auto, auto),
+  inset: 7pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [Aspect], [MPI], [HPF],
+  [Type], [Parallel communication library], [Fortran language extension],
+  [Language], [C / C++ / Fortran], [Fortran only],
+  [Parallelism Control], [*Fully manual by programmer*], [*Mostly compiler-driven*],
+  [Flexibility], [Very high], [Limited],
+  [Maintainability], [Hard but highly tunable], [Simpler but harder to tune],
+  [Learning Curve], [High], [Low to medium],
+  [Current Usage], [*Mainstream in HPC*], [*Obsolete / deprecated*],
+)
+#set text(size: 18pt)
+]
+]
 
 == MPI Features
 
@@ -75,16 +94,19 @@
 - *Multi-node Capacity*: 
   - Can run across multiple nodes; abstracts network communication.
 - *Standardized API*: 
-  - Standardized interface in C, C++, and Fortran; hightly portable.
+  - Standardized interface in C, C++, and Fortran; highly portable.
 - *Multiple Implementation*: 
   - Available implementations include OpenMPI, MPICH, and Intel MPI, etc.
-- *Difficalt to Debug*: 
-  - Debugging is challenging due to concurrency and communiaction complexity.
+- *Difficult to Debug*: 
+  - Debugging is challenging due to concurrency and communication complexity.
 
 == Typical example of Usage
-- Simulation on a supercomputer(Physics, Meteorology, Chemistry, etc.)
-- Data processing in large-scale data analysis (e.g., genomics, astronomy).
-- Machine learning training on large datasets (e.g., distributed deep learning).
+- *Simulation on a supercomputer*
+  - Physics, Meteorology, Chemistry, etc.
+- *Data processing in large-scale data analysis*
+  - e.g., genomics, astronomy
+- *Machine learning training on large datasets*
+  - e.g., distributed deep learning
 
 == Comparison between implementations
 
@@ -97,29 +119,57 @@
     stroke: 0.5pt,
     [], [*OpenMPI*], [*MPICH*], [*Intel MPI*],
     [*Developer*], [Universities, Companies], [Argonne National Laboratory], [Intel Corporation],
-    [*Distribution*], [Open source], [Open source], [Free version included],
+    [*Distribution*], [Open source], [Open source], [Closed source],
     [*Optimization Target*], [General purpose], [Lightweight, stable], [Optimized for Intel architecture],
     [*Performance*], [Medium to high], [Lightweight, stable, scalable], [Best performance on Intel CPUs],
     [*Main Use*], [Academic clusters, general HPC], [Research, education], [Commercial HPC, Intel clusters],
   )
   #set text(size: 16pt)
 - #underline[`Miyabi` uses `OpenMPI`] as the default MPI implementation.(`Miyabi`is the supercomputer system of the University of Tokyo)
-- To be more specific, #underline[`mpicc` on `Miyabi` is bined to `nvc` compiler] (NVIDIA HPC SDK C compiler), which means `NVIDIA HPC SKD` + `MPI` environment is used.
+- To be more specific, #underline[`mpicc` on `Miyabi` is bound to `nvc` compiler] (NVIDIA HPC SDK C compiler), which means `NVIDIA HPC SDK` + `MPI` environment is used.
 ]
 
 
 == Key Communication Primitives
 
-- *System function*: `MPI_Init`, `MPI_Finalize`, `MPI_Comm_size`, `MPI_Comm_rank`
-- *Point-to-point communication*: `MPI_Send`, `MPI_Recv`
-- *Collective communication*: `MPI_Bcast`, `MPI_Reduce`, `MPI_Alltoall`
-- *Synchronization*: `MPI_Barrier`, `MPI_Wait`, `MPI_Test`
-- *Derived data types*: `MPI_Type_create_struct`, `MPI_Type_vector`
-- *Non-blocking communication*: `MPI_Isend`, `MPI_Irecv`
-- *Remote memory access*: `MPI_Put`, `MPI_Get`
-- *Process management*: `MPI_Comm_spawn`, `MPI_Comm_free`
+- *System function*: 
+  - `MPI_Init`, `MPI_Finalize`, `MPI_Comm_size`, `MPI_Comm_rank`
+- *Point-to-point communication*: 
+  - `MPI_Send`, `MPI_Recv`
+- *Collective communication*: 
+  - `MPI_Bcast`, `MPI_Reduce`, `MPI_Alltoall`
+- *Synchronization*: 
+  - `MPI_Barrier`, `MPI_Wait`, `MPI_Test`
+- *Derived data types*: 
+  - `MPI_Type_create_struct`, `MPI_Type_vector`
+- *Non-blocking communication*: 
+  - `MPI_Isend`, `MPI_Irecv`
+- *Remote memory access*: 
+  - `MPI_Put`, `MPI_Get`
+- *Process management*: 
+  - `MPI_Comm_spawn`, `MPI_Comm_free`
 
-
+== Internal Mechanisms of MPI Communication
+#slide[
+- MPI implementations (e.g., MPICH, OpenMPI) rely on various OS system calls and low-level libraries for communication.
+#list(
+  [*Intra-node Communication (within the same node)*:
+    - Shared memory: `mmap`, `shm_open`, `memfd_create`, System V `shm`
+    - Event waiting: `futex`, `poll`, `epoll`, `select`
+    - Pipes & sockets: `write`, `read`
+    - UNIX domain sockets: `sendmsg`, `recvmsg`
+    - Synchronization: `sem_open`, `pthread_mutex`, `spinlock`
+  ],
+  [*Inter-node Communication (across nodes)*:
+    - TCP/IP sockets: `socket`, `bind`, `listen`, `accept`, `connect`, `send`, `recv`, `sendto`, `recvfrom`
+    - RDMA & verbs API (e.g., InfiniBand) for zero-copy communication
+  ],
+  [*High-Performance Cluster Communication*:
+    - Libraries: `libibverbs`, `UCX`, `OFI (Libfabric)`, `XPMEM`, `NVLink`
+    - Kernel bypass with DMA (Direct Memory Access) for low-latency, high-throughput transfers
+  ]
+)
+]
 
 = Basic Learning of MPI
 
@@ -132,7 +182,35 @@
 ]
 ]
 
+== Tutorial Programs
+#slide[
+- The following programs are available below.
+#blink("https://github.com/Omusubi0123/mpi-tutorial")[MPI Tutorial GitHub Repository]
+]
+
 == Minimum MPI Program
+
+#slide[
+=== MPI Language Differences
+#set text(size: 16pt)
+#table(
+  columns: (auto, auto, auto, auto),
+  inset: 7pt,
+  align: center + horizon,
+  stroke: 0.5pt,
+  [], [*C*], [*C++*], [*Fortran*],
+  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
+  [*Official MPI support*], [○], [▲], [○],
+  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
+  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
+  [*Scientific computing*], [○], [▲], [◎]
+)
+- C++
+  - MPI-3.0 abolished C++ only bindings.
+  - Currently, C++ also uses C interface.
+- Fortran
+  - Considering readability, type safety, and portability, `use mpi` is recommended.
+]
 
 #slide(composer: (3fr, 2fr))[
 === Hello World (C)
@@ -246,28 +324,6 @@ My Rank:      1
 ```
 ]
 
-#slide[
-=== MPI Language Differences
-#set text(size: 16pt)
-#table(
-  columns: (auto, auto, auto, auto),
-  inset: 7pt,
-  align: center + horizon,
-  stroke: 0.5pt,
-  [], [*C*], [*C++ (※)*], [*Fortran*],
-  [*MPI Header*], [`#include <mpi.h>`], [`#include <mpi.h>`], [`use mpi` or `include 'mpif.h'`],
-  [*Official MPI support*], [○], [▲], [○],
-  [*Syntax intuitiveness*], [Explicit C syntax], [Almost same as C], [`call` and `subroutine` based],
-  [*Compiler*], [`mpicc`], [`mpicxx` or `mpic++`], [`mpif90` or `mpifort`],
-  [*Scientific computing*], [○], [▲], [◎]
-)
-- C++
-  - MPI-3.0 abolished C++ only bindings.
-  - Currently, C++ also uses C interface.
-- Fortran
-  - Considering readability, type safety, and portability, `use mpi` is recommended.
-]
-
 == Important Terms of MPI
 
 #slide[
@@ -291,18 +347,41 @@ My Rank:      1
 - Each process in a communicator has a unique *rank*.
   #align(center)[
   ```
-  - Eaxmple:
+  - Example:
     - Process 0, 1, 2, 3 belong to a group.
     - Communicator: MPI_COMM_WORLD
     - Group: [P0, P1, P2, P3]
     - Rank: 0, 1, 2, 3
-  ┌──────────────────────────────────────────┐
-  │       Communicator: MPI_COMM_WORLD       │
-  │       Group: [P0, P1, P2, P3]            │
-  │       Rank:  0    1    2    3            │
-  └──────────────────────────────────────────┘
+
+    MPI_COMM_WORLD (communicator)
+    ├─ Group: { P0, P1, P2, P3 }
+    │   ├─ P0 (rank 0)
+    │   ├─ P1 (rank 1)
+    │   ├─ P2 (rank 2)
+    │   └─ P3 (rank 3)
   ```
   ]
+]
+
+#slide[
+=== Communicator and Group
+- *Group* is a set(list) of processes. It is just a list, it does not have any communication capability.
+- *Communicator* containes a group and communication capability. It is a unit of communication.
+- A #underline[group can create multiple communicators].
+- A #underline[communicator cannnot communicate with other communicators].
+
+```
+Group A: {a, b, c}
+↓ Communicator B created from Group A
+Communicator B: {a, b, c, d}
+
+↓ Communicator C created from Group A
+Communicator C: {a, b, c, e}
+
+- ○ a, b, c ↔ d （via Communicator B）
+- ○ a, b, c ↔ e （via Communicator C）
+- x d ↔ e       （cannot communicate）
+```
 ]
 
 #slide[
@@ -311,13 +390,13 @@ My Rank:      1
   - the default communicator that includes all processes.
   - all processes first belong to this communicator.
   - becomes the default communicator for most MPI functions.
-- *MPI_Comm_rank*:
+- *MPI_Comm_rank()*:
   - retrieves the rank of the calling process in specified communicator.
   - usually use `MPI_COMM_WORLD` as the communicator.
-- *MPI_Comm_size*:
+- *MPI_Comm_size()*:
   - retrieves the number of processes in the specified communicator.
   - usually use `MPI_COMM_WORLD` as the communicator.
-- *MPI_Comm_split*:
+- *MPI_Comm_split()*:
   - creates a new communicator by splitting the existing one based on a color and key.
   - in other words, create a new communicator with the same color processes.
 ]
@@ -391,11 +470,60 @@ World Rank 0 => Group 0, New Rank 0 of 3
       [6], [0],        [{0, 3, 6}],     [2],               [3],
       [7], [1],        [{1, 4, 7}],     [2],               [3],
     )
-  ]
+    ]
   #set text(size: 18pt)
 ]
 
 == Point-to-Point Communication
+#slide[
+- Many MPI functions have the following signature
+- *MPI_Send* sends data to a specific process.
+- *MPI_Recv* receives data from a specific process.
+```c
+MPI_Send(
+    void* data,             // data buffer address
+    int count,              // number of elements in the buffer
+    MPI_Datatype datatype,  // data type of the elements
+    int destination,        // destination process rank
+    int tag,                // message tag (for filtering)
+    MPI_Comm communicator};   // communicator
+```
+```c
+MPI_Recv(
+    void* data,
+    int count,
+    MPI_Datatype datatype,
+    int source,
+    int tag,
+    MPI_Comm communicator,
+    MPI_Status* status);
+```
+]
+
+#align(center)[
+  #table(
+    columns: (auto, auto),
+    inset: 7pt,
+    stroke: 1pt,
+    align: center,
+    [*MPI Data Type*], [*C Type*],
+    [`MPI_SHORT`], [`short int`],
+    [`MPI_INT`], [`int`],
+    [`MPI_LONG`], [`long int`],
+    [`MPI_LONG_LONG`], [`long long int`],
+    [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
+    [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
+    [`MPI_UNSIGNED`], [`unsigned int`],
+    [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
+    [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
+    [`MPI_FLOAT`], [`float`],
+    [`MPI_DOUBLE`], [`double`],
+    [`MPI_LONG_DOUBLE`], [`long double`],
+    [`MPI_BYTE`], [`char`]
+  )
+]
+
+
 #slide[
 #grid(columns: (auto, auto),
 [
@@ -472,86 +600,12 @@ Received Data: 1 2 3 4 5 6 7 8 9 10
 ```
 ]
 
-#slide(composer: (1fr, 1fr))[
-- many MPI functions have the following signature:
-```c
-MPI_Send(
-    void* data,
-    int count,
-    MPI_Datatype datatype,
-    int destination,
-    int tag,
-    MPI_Comm communicator
-);
-```
-][
-```c
-MPI_Recv(
-    void* data,
-    int count,
-    MPI_Datatype datatype,
-    int source,
-    int tag,
-    MPI_Comm communicator,
-    MPI_Status* status
-);
-```
-]
+= Collective Communication
 
-#slide[
-- Many MPI functions have the following signature
-```c
-MPI_Send(
-    void* data,             // data buffer address
-    int count,              // number of elements in the buffer
-    MPI_Datatype datatype,  // data type of the elements
-    int destination,        // destination process rank
-    int tag,                // message tag (for filtering)
-    MPI_Comm communicator   // communicator
-);
-```
-```c
-MPI_Recv(
-    void* data,
-    int count,
-    MPI_Datatype datatype,
-    int source,
-    int tag,
-    MPI_Comm communicator,
-    MPI_Status* status
-);
-```
-]
+== synchronization
 
-#align(center)[
-  #table(
-    columns: (auto, auto),
-    inset: 7pt,
-    stroke: 1pt,
-    align: center,
-    [*MPI Data Type*], [*C Type*],
-    [`MPI_SHORT`], [`short int`],
-    [`MPI_INT`], [`int`],
-    [`MPI_LONG`], [`long int`],
-    [`MPI_LONG_LONG`], [`long long int`],
-    [`MPI_UNSIGNED_CHAR`], [`unsigned char`],
-    [`MPI_UNSIGNED_SHORT`], [`unsigned short int`],
-    [`MPI_UNSIGNED`], [`unsigned int`],
-    [`MPI_UNSIGNED_LONG`], [`unsigned long int`],
-    [`MPI_UNSIGNED_LONG_LONG`], [`unsigned long long int`],
-    [`MPI_FLOAT`], [`float`],
-    [`MPI_DOUBLE`], [`double`],
-    [`MPI_LONG_DOUBLE`], [`long double`],
-    [`MPI_BYTE`], [`char`]
-  )
-]
-
-= Collective Coommunication
-
-== syncronization
-
-- Collective communication is a communication method that involves all processes in a communicator.
-- In collective communiaction, syncronization among all process is required.
+- Collective communication is a communication method that #underline[involves all processes in a communicator].
+- In collective communication, synchronization among all process is required.
 - All process cannot proceed until all processes reach the same point.
 - To achieve this, MPI provides several collective communication functions.
 
@@ -561,8 +615,8 @@ MPI_Recv(
 - *MPI_Barrier* is a collective communication function that synchronizes all processes in a communicator.
 - All processes must call `MPI_Barrier` to ensure that all processes reach the same point before proceeding.
 - It is often used to ensure that all processes have completed their previous tasks before moving on to the next step.
-- The most basic usage of `MPI_Barrier` is to precise time measurement.
-- If you do not call `MPI_Barrier` in all processed, the program will block and cannot proceed.
+- The most basic usage of `MPI_Barrier` is for precise time measurement.
+- If you do not call `MPI_Barrier` in all processes, the program will block and cannot proceed.
 - `MPI_Barrier(MPI_Comm communicator);`
 ]
 
@@ -787,12 +841,55 @@ Rank 3 received: 14 15 16 17 18
 
 if `send_data` cannot divide by `size`, the last process will receive the remaining data.
 ```sh
-// send_data == 6
+// send_data == recv_data == 6
 
 Rank 0 received: 0 1 2 3 4 5
 Rank 1 received: 6 7 8 9 10 11
 Rank 2 received: 12 13 14 15 16 17
 Rank 3 received: 18 19 20 -875497504 65535 20
+```
+]
+
+#slide[
+- What happens if `send_count` is not the same as `recv_count`?
+
+```c
+int send_data[TOTAL_DATA];
+int send_count = TOTAL_DATA / size;
+int recv_count = TOTAL_DATA / size;
+int recv_data[recv_count];
+
+if (rank == 0) {
+    for (int i = 0; i < TOTAL_DATA; i++) {
+        send_data[i] = i;
+    }
+    printf("Rank 0: Scattering data...\n");
+}
+
+if (rank == 3) {
+    recv_count = 4;
+}
+
+MPI_Scatter(send_data, send_count, MPI_INT,
+            recv_data, recv_count, MPI_INT,
+            0, MPI_COMM_WORLD);
+```
+
+- A: *It will cause an error*.
+```sh
+$ mpicc scatter2.c -o scatter2
+$ mpirun -np 4 ./scatter2
+
+Rank 0: Scattering data...
+Rank 0 received: 0 1 2 3 4
+Rank 1 received: 5 6 7 8 9
+Rank 2 received: 10 11 12 13 14
+[miyabi-g3:1978858] *** An error occurred in MPI_Scatter
+[miyabi-g3:1978858] *** reported by process [1190789121,3]
+[miyabi-g3:1978858] *** on communicator MPI_COMM_WORLD
+[miyabi-g3:1978858] *** MPI_ERR_TRUNCATE: message truncated
+[miyabi-g3:1978858] *** MPI_ERRORS_ARE_FATAL (processes in this communicator will now abort,
+[miyabi-g3:1978858] ***    and potentially your MPI job)
 ```
 ]
 
@@ -859,7 +956,7 @@ Rank 0 gathered data: 0 1 2 3 4 5 6 7
 == MPI_Allgather
 #slide[
 - `MPI_Scatter` and `MPI_Gather` conduct many-to-one or one-to-many communication.
-- It is useful if you send data from multiple processed to multiple processes.
+- It is useful if you send data from multiple processes to multiple processes.
 - *MPI_Allgather* is a collective communication function that collects data from all processes in a communicator and sends it to all other processes.
 - It is like first `MPI_Gather` and then `MPI_Bcast`. Collect data by process rank order.
 ```c
@@ -921,7 +1018,7 @@ Rank 1 received: 0 1 10 11 20 21 30 31
 - `reduce` is a basic concept in functional programming. It transforms a set of numbers into a smaller set of numbers.
   - `reduce([1, 2, 3, 4, 5], sum) = 15`
   - `reduce([1, 2, 3, 4, 5], multiply) = 120`
-- Collect distribulted data and apply a reduction operation is a tough task. However, MPI provides a simple interface to do this.
+- Collect dictributed data and apply a reduction operation is a tough task. However, MPI provides a simple interface to do this.
 - *MPI_Reduce* is a collective communication function that collects data from all processes in a communicator to the root process, and applies a reduction operation to the data.
 ]
 
@@ -1037,6 +1134,45 @@ Rank 3: total sum = 10, average = 2.50
 
 
 = Application Example
+== How to Run Multi-node program on Miyabi
+#slide[
+- The following is an example of how to run the Page Rank calculation on a multi-node cluster.
+- When you submit a job to `Miyabi-G` cluster, you can specify the number of node and the number of process per node using `-l select={num_nodes}:mpiprocs={num_procs_per_node}` option.
+- When you run a MPI program on a multi-node cluster, you need to specify the number of processes using `mpirun -np {num_procs}` option.
+Example `run.sh` script:
+```sh
+#!/bin/bash
+#PBS -q debug-g
+#PBS -l select=16:mpiprocs=4
+#PBS -W group_list=gc64
+#PBS -o latest_result.txt
+#PBS -j oe
+...
+mpirun -np 64 ./naive/pagerank_naive
+```
+]
+
+#slide[
+- If you want to run a MPI program on another process-per-node than `mpiprocs`, you can use `--host` option or `--hostfile` option.
+- `--host` option allows you to specify the hostnames and the number of processes per host.
+- `--hostfile` option allows you to specify a file that contains the hostnames and the number of processes per host.
+Example `--host` option:
+```sh
+$ mpirun -np 4 --host node1:2,node2:2 ./your_mpi_program
+→node1 and node2 each run 2 processes.
+```
+Example `--hostfile` option:
+`hostfile.txt`:
+```txt
+node1 slots=2
+node2 slots=2/
+```
+```sh
+$ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
+```
+]
+
+
 == Page Rank Calculation
 #slide[
 - For a simple application example of MPI, I will introduce the Page Rank calculation.
@@ -1209,44 +1345,6 @@ for (int iter = 0; iter < MAX_ITER; iter++) {
 ])
 ]
 
-== How to Run on Multi-node Cluster in Miyabi
-#slide[
-- The following is an example of how to run the Page Rank calculation on a multi-node cluster.
-- When you submit a job to `Miyabi-G` cluster, you can specify the number of node and the number of process per node using `-l select={num_nodes}:mpiprocs={num_procs_per_node}` option.
-- When you run a MPI program on a multi-node cluster, you need to specify the number of processes using `mpirun -np {num_procs}` option.
-Example `run.sh` script:
-```sh
-#!/bin/bash
-#PBS -q debug-g
-#PBS -l select=16:mpiprocs=4
-#PBS -W group_list=gc64
-#PBS -o latest_result.txt
-#PBS -j oe
-...
-mpirun -np 64 ./naive/pagerank_naive
-```
-]
-
-#slide[
-- If you want to run a MPI program on another process-per-node than `mpiprocs`, you can use `--host` option or `--hostfile` option.
-- `--host` option allows you to specify the hostnames and the number of processes per host.
-- `--hostfile` option allows you to specify a file that contains the hostnames and the number of processes per host.
-Example `--host` option:
-```sh
-$ mpirun -np 4 --host node1:2,node2:2 ./your_mpi_program
-→node1 and node2 each run 2 processes.
-```
-Example `--hostfile` option:
-`hostfile.txt`:
-```txt
-node1 slots=2
-node2 slots=2/
-```
-```sh
-$ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
-```
-]
-
 = References
 #slide[
 - Referenced in this tutorial: 
@@ -1267,4 +1365,237 @@ $ mpirun -np 4 --hostfile hostfile.txt ./your_mpi_program
 - One approach is:
   1. we get related web pages according to DF-IDF or BM25 algorithm
   2. then we apply Page Rank to rerank the related web pages.
+]
+
+== Page Rank Full Code
+#slide(composer: (1fr, 1fr))[
+`graph_loader.h`
+```c
+#ifndef GRAPH_LOADER_H
+#define GRAPH_LOADER_H
+
+typedef struct {
+    int n_nodes;
+    int n_edges;
+    int *out_degree;
+    double **M;
+} Graph;
+
+int read_graph(const char *filename, Graph *g);
+void free_graph(Graph *g);
+
+#endif
+```
+][
+`graph_loader.c`
+```c
+#include "graph_loader.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+int read_graph(const char *filename, Graph *g) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        perror("fopen");
+        return -1;
+    }
+
+    if (fscanf(fp, "%d", &g->n_nodes) != 1) {
+        fprintf(stderr, "Failed to read node count\n");
+        return -1;
+    }
+```
+]
+#slide(composer: (1fr, 1fr))[
+```c
+    g->out_degree = calloc(g->n_nodes, sizeof(int));
+    g->M = malloc(g->n_nodes * sizeof(double *));
+    for (int i = 0; i < g->n_nodes; i++) {
+        g->M[i] = calloc(g->n_nodes, sizeof(double));
+    }
+
+    int from, to;
+    g->n_edges = 0;
+    while (fscanf(fp, "%d %d", &from, &to) == 2) {
+        g->M[to][from] += 1.0;
+        g->out_degree[from]++;
+        g->n_edges++;
+    }
+    fclose(fp);
+```
+][
+```c
+    // 正規化：M[to][from] /= out_degree[from]
+    for (int i = 0; i < g->n_nodes; i++) {
+        for (int j = 0; j < g->n_nodes; j++) {
+            if (g->out_degree[j] > 0) {
+                g->M[i][j] /= g->out_degree[j];
+            }
+        }
+    }
+
+    return 0;
+}
+
+void free_graph(Graph *g) {
+    for (int i = 0; i < g->n_nodes; i++) {
+        free(g->M[i]);
+    }
+    free(g->M);
+    free(g->out_degree);
+}
+```
+]
+
+#slide(composer: (1fr, 1fr))[
+`main.c`
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <mpi.h>
+#include "graph_loader.h"
+
+#define DAMPING 0.85
+#define TOL 1e-6
+#define MAX_ITER 100
+
+int main(int argc, char **argv) {
+    MPI_Init(&argc, &argv);
+    
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+```
+][
+```c
+if (argc < 2) {
+    if (rank == 0) {
+        fprintf(stderr, "Usage: %s <n_node>\n", argv[0]);
+    }
+    MPI_Abort(MPI_COMM_WORLD, 1);
+}
+int n_node = atoi(argv[1]);
+char graph_path[256], pagerank_path[256];
+snprintf(graph_path, sizeof(graph_path), "data/%d/graph.txt", n_node);
+snprintf(pagerank_path, sizeof(pagerank_path), "data/%d/pagerank.txt", n_node);
+
+Graph g;
+
+if (read_graph(graph_path, &g) != 0) {
+    MPI_Abort(MPI_COMM_WORLD, 1);
+}
+```
+]
+#slide(composer: (1fr, 1fr))[
+```c
+int n = g.n_nodes;
+
+// データ分割（行分割）
+int rows_per_proc = n / size;
+int remainder = n % size;
+int my_rows = rows_per_proc + (rank < remainder ? 1 : 0);
+int my_start = rank * rows_per_proc + (rank < remainder ? rank : remainder);
+
+// PageRankベクトルxと各プロセスが担当する新しいベクトルnew_x_local(len(my_rows)次元)を確保
+double *x = malloc(n * sizeof(double));
+double *new_x_local = malloc(my_rows * sizeof(double));
+
+// 全プロセスで保持するの新しいPageRankベクトルnew_x_full(n次元)を確保
+double *new_x_full = malloc(n * sizeof(double));
+int *recvcounts = malloc(size * sizeof(int));
+int *displs = malloc(size * sizeof(int));
+
+for (int i = 0; i < n; i++) x[i] = 1.0 / n;
+```
+][
+```c
+for (int i = 0; i < size; i++) {
+    recvcounts[i] = rows_per_proc + (i < remainder ? 1 : 0);
+    displs[i] = i * rows_per_proc + (i < remainder ? i : remainder);
+}
+if (rank == 0) {
+    printf("Starting PageRank computation with %d processes...\n", size);
+}
+printf("[Rank %d] Local rows: %d, Start index: %d\n", rank, my_rows, my_start);
+double t_start = MPI_Wtime();
+
+for (int iter = 0; iter < MAX_ITER; iter++) {
+    for (int i = 0; i < my_rows; i++) {
+        int global_i = my_start + i;
+        new_x_local[i] = 0.0;
+        for (int j = 0; j < n; j++) {
+            new_x_local[i] += g.M[global_i][j] * x[j];
+        }
+        new_x_local[i] = DAMPING * new_x_local[i] + (1.0 - DAMPING) / n;
+    }
+```
+]
+#slide(composer: (1fr, 1fr))[
+```c
+    MPI_Allgatherv(new_x_local, my_rows, MPI_DOUBLE,
+                    new_x_full, recvcounts, displs, MPI_DOUBLE, MPI_COMM_WORLD);
+    // チェック用：rank 0 が diff を計算
+    double diff = 0.0;
+    if (rank == 0) {
+        for (int i = 0; i < n; i++) {
+            diff += fabs(new_x_full[i] - x[i]);
+        }
+        printf("[Iter %d] diff = %f\n", iter + 1, diff);
+    }
+
+    // 全rankにdiffをブロードキャスト（終了判定共有）
+    MPI_Bcast(&diff, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    if (diff < TOL) break;
+
+    // x を更新
+    for (int i = 0; i < n; i++) x[i] = new_x_full[i];
+}
+```
+][
+```c
+double t_end = MPI_Wtime();
+if (rank == 0) {
+    printf("Main Loop Time: %.6f seconds\n", t_end - t_start);
+}
+
+free(new_x_full);
+free(recvcounts);
+free(displs);
+
+// 結果表示
+if (rank == 0) {
+    printf("\n\nFinal PageRank:\n");
+    for (int i = 0; i < n; i++) {
+        printf("Node %6d: %f\n", i, x[i]);
+    }
+    printf("\n");
+}
+```
+]
+#slide[
+```c
+// 結果をファイルに書き出す
+if (rank == 0) {
+    FILE *fp = fopen(pagerank_path, "w");
+    if (fp == NULL) {
+        perror("Failed to open result file");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    fprintf(fp, "%d\n", n);
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "%d %f\n", i, x[i]);
+    }
+    fclose(fp);
+    printf("PageRank results written to %s\n", pagerank_path);
+}
+
+free(x);
+free(new_x_local);
+free_graph(&g);
+
+MPI_Finalize();
+return 0;
+}
+```
 ]
